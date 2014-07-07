@@ -2,7 +2,7 @@
 minute=$(date '+%M')
 hour=$(date '+%H')
 
-if [ $minute != 46 ]; then
+if [ $minute != 55 ]; then
    echo $minute 
    exit
 fi
