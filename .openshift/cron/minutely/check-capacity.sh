@@ -2,12 +2,11 @@
 minute=$(date '+%M')
 hour=$(date '+%H')
 
-if [ $minute != 35 ]; then
+if [ $minute != 39 ]; then
     exit
 fi
 
-minute=$(date '+%M')
-if [ $minute != 21 ]; then
+if [ $hour != 21 ]; then
     exit
 fi
 
