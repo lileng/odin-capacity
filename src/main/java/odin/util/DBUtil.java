@@ -19,12 +19,11 @@ public class DBUtil {
 			log.info("Setup new DB connection");
 			Properties props = new Properties();
 			String env = System.getenv("ODIN_ENV");
-			if(env != null && env.equals("DEV"))
-				props.put("eclipselink.persistencexml", "odin-persistence.DEV.xml");
-			else
-				props.put("eclipselink.persistencexml", "odin-persistence.xml");
-			factory = Persistence.createEntityManagerFactory(
-					PERSISTENCE_UNIT_NAME, props);
+//			if(env != null && env.equals("DEV"))
+//				props.put("eclipselink.persistencexml", "odin-persistence.DEV.xml");
+//			else
+//				props.put("eclipselink.persistencexml", "odin-persistence.xml");
+			factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		} else {
 			log.info("Using existing DB connection");
 		}

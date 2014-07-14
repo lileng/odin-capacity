@@ -19,11 +19,12 @@ public class SendMail {
 	public static void main(String[] args) throws IOException {
 		sendMessage(
 				"morten@lileng.com",
+				"mlileng@merkleinc.com",
 				"test subject",
 				"<img src=\"http://capacity-odin.rhcloud.com/images/agile-odin.jpg\" alt=\"odin\" width=\"800\" height=\"75\" />");
 	}
 
-	public static void sendMessage(String toEmailAddress, String subject,
+	public static void sendMessage(String toEmailAddress, String ccEmailAddress, String subject,
 			String content) throws IOException {
 		String emailOverride = System.getenv("ODIN_EMAILOVERRIDE");
 		if(emailOverride != null) {
@@ -67,6 +68,8 @@ public class SendMail {
 			// Set To: header field of the header.
 			message.addRecipient(Message.RecipientType.TO, new InternetAddress(
 					toEmailAddress));
+			message.addRecipient(Message.RecipientType.CC, new InternetAddress(
+					ccEmailAddress));
 
 			// Set Subject: header field
 			message.setSubject(subject);

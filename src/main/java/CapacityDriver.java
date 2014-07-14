@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import odin.domain.Individual;
+import odin.domain.Observation;
 import odin.domain.Sprint;
 
 import org.apache.log4j.Logger;
@@ -77,33 +78,93 @@ public class CapacityDriver {
 		
 		if(minutesRemainingWork > 0){
 			hoursRemainingWork = minutesRemainingWork / 60;
-			logger.info("hoursRemainingWork=" + hoursRemainingWork);
+			logger.info("hoursRemainingWork for " + username + "=" + hoursRemainingWork);
+			logger.info("hoursRemainingCapacity for " + username + "=" + hoursRemainingCapacity);
 		}
-			
-		if (hoursRemainingCapacity < hoursRemainingWork) {
-			// Send mail that you're in trouble
-			logger.info("HoursRemainingCapacity < hoursRemainingWork");
+		int delta = hoursRemainingCapacity - hoursRemainingWork;
+		if (delta < -20) {
+			// Send mail
+			logger.info("Overallocation: HoursRemainingCapacity < hoursRemainingWork for " + username + ". Sending email to notify...");
+			Observation.recordObservation(
+					username, "Overallocation", "Overallocation: HoursRemainingCapacity < hoursRemainingWork for " + username, 
+					"hoursRemainingCapacity", String.valueOf(hoursRemainingCapacity), 
+					"hoursRemainingWork", String.valueOf(hoursRemainingWork));
+			sendOverallocatedMail(emailAddress, name, hoursRemainingCapacity,
+					hoursRemainingWork, sb);
+			Individual.recordUserContactedNow(username);
 
-			SendMail.sendMessage(
-					emailAddress, 
-					"Odin Capacity Status",
-					"<h1>Odin Capacity Status</h1>"
-							+ "<p>Hi "
-							+ name
-							+ ". It looks like you may have more tasks than available hours left in the current sprint."
-							+ "<ul>"
-							+ "<li>Your estimated remaining capacity in hours: "
-							+ hoursRemainingCapacity
-							+ "<li>Hours for your estimated tasks: "
-							+ hoursRemainingWork
-							+ "</ul>"
-							+ "<p>The tasks with hours still remaining are the following:"
-							+ "<ul>" + sb.toString() + "</ul>"
-							+ "<p>Thank you,<br>"
-							+ "--agile odin (odin@lileng.com)");
+		} else  if (delta > 40) {
+			// Send mail
+			logger.info("Underallocation: HoursRemainingCapacity > hoursRemainingWork for " + username + ". Sending email to notify...");
+			Observation.recordObservation(
+					username, "Underallocation", "Underallocation: HoursRemainingCapacity > hoursRemainingWork for " + username, 
+					"hoursRemainingCapacity", String.valueOf(hoursRemainingCapacity), 
+					"hoursRemainingWork", String.valueOf(hoursRemainingWork));
+			sendUnderallocatedMail(emailAddress, name, hoursRemainingCapacity,
+					hoursRemainingWork, sb);
 			Individual.recordUserContactedNow(username);
 
 		}
+	}
+
+	private static void sendUnderallocatedMail(String emailAddress, String name,
+			int hoursRemainingCapacity, int hoursRemainingWork, StringBuffer sb)
+			throws IOException {
+		SendMail.sendMessage(
+				emailAddress, 
+				"mlileng@merkleinc.com",
+				"Odin Capacity Status - You are underallocated",
+				"<h1>Odin Underallocation Status</h1>"
+						+ "<p>Hi "
+						+ name
+						+ ". It looks like you may have hours available, and not enough tasks on your plate."
+						+ "<ul>"
+						+ "<li>Your estimated remaining capacity in hours: "
+						+ hoursRemainingCapacity
+						+ "<li>Hours for your estimated tasks: "
+						+ hoursRemainingWork
+						+ "</ul>"
+						+ "<p>How do you resolve this? <ul>"
+						+ "<li>Make sure your estimates for remaining tasks assigned to you are as accurate as they can."
+						+ "<li>Let your team leader know that you need more work. In general, she/he will look at the other "
+						+ "members. You may get tasks from overallocated resources. The next possibility is to bring more tasks from the product "
+						+ "backlog into the current sprint."
+						+ "<li>Note that all tickets in the sprint and product backlog should have a numeric ranking. "
+						+ "Tickets with lower ranking number has higher priority." 
+						+ "</ul>"
+						+ "<p>The tasks with hours still remaining are the following:"
+						+ "<ul>" + sb.toString() + "</ul>"
+						+ "<p>Thank you,<br>"
+						+ "--agile odin (odin@lileng.com)");
+	}
+
+	private static void sendOverallocatedMail(String emailAddress, String name,
+			int hoursRemainingCapacity, int hoursRemainingWork, StringBuffer sb)
+			throws IOException {
+		SendMail.sendMessage(
+				emailAddress, 
+				"mlileng@merkleinc.com",
+				"Odin Capacity Status - You are overallocated",
+				"<h1>Odin Overallocation Status</h1>"
+						+ "<p>Hi "
+						+ name
+						+ ". It looks like you may have more tasks than available hours left in the current sprint. "
+						+ "<ul>"
+						+ "<li>Your estimated remaining capacity in hours: "
+						+ hoursRemainingCapacity
+						+ "<li>Hours for your estimated tasks: "
+						+ hoursRemainingWork
+						+ "</ul>"
+						+ "<p>How do you resolve this? <ul>"
+						+ "<li>Make sure you update the remaining hours on tasks with status 'In Progress' every day."
+						+ "<li>All tasks should have a numeric ranking. "
+						+ "Ask your team lead if you can push the task with highest number (prioritized lowest) out of the sprint. "
+						+ "You can also ask if there are other ways you can get help - maybe a team member can take over a task from you."
+						+ "</ul>"
+						+ "<p>The tasks with hours still remaining are the following:"
+						+ "<ul>" + sb.toString() + "</ul>"
+						+ "<p>Thank you,<br>"
+						+ "--agile odin (odin@lileng.com)");
 	}
 
 	private static void printClassPath() {
