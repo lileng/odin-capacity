@@ -15,7 +15,7 @@ import odin.util.DBUtil;
 @Entity
 public class Observation {
 	
-	public static void recordObservation(String userName, String type, String description, String key1, String value1, String key2, String value2){
+	public static void recordObservation(String userName, String type, String description, String key1, int value1, String key2, int value2){
 		EntityManager em = DBUtil.getEntityManager();
 		Observation observation = new Observation();
 

@@ -82,13 +82,13 @@ public class CapacityDriver {
 			logger.info("hoursRemainingCapacity for " + username + "=" + hoursRemainingCapacity);
 		}
 		int delta = hoursRemainingCapacity - hoursRemainingWork;
-		if (delta < -20) {
+		if (delta < -40) {
 			// Send mail
 			logger.info("Overallocation: HoursRemainingCapacity < hoursRemainingWork for " + username + ". Sending email to notify...");
 			Observation.recordObservation(
 					username, "Overallocation", "Overallocation: HoursRemainingCapacity < hoursRemainingWork for " + username, 
-					"hoursRemainingCapacity", String.valueOf(hoursRemainingCapacity), 
-					"hoursRemainingWork", String.valueOf(hoursRemainingWork));
+					"hoursRemainingCapacity", hoursRemainingCapacity, 
+					"hoursRemainingWork", hoursRemainingWork);
 			sendOverallocatedMail(emailAddress, name, hoursRemainingCapacity,
 					hoursRemainingWork, sb);
 			Individual.recordUserContactedNow(username);
@@ -98,11 +98,17 @@ public class CapacityDriver {
 			logger.info("Underallocation: HoursRemainingCapacity > hoursRemainingWork for " + username + ". Sending email to notify...");
 			Observation.recordObservation(
 					username, "Underallocation", "Underallocation: HoursRemainingCapacity > hoursRemainingWork for " + username, 
-					"hoursRemainingCapacity", String.valueOf(hoursRemainingCapacity), 
-					"hoursRemainingWork", String.valueOf(hoursRemainingWork));
+					"hoursRemainingCapacity", hoursRemainingCapacity, 
+					"hoursRemainingWork", hoursRemainingWork);
 			sendUnderallocatedMail(emailAddress, name, hoursRemainingCapacity,
 					hoursRemainingWork, sb);
 			Individual.recordUserContactedNow(username);
+
+		}else {
+			Observation.recordObservation(
+					username, "Allocation ok", "+/- 40hrs" + username, 
+					"hoursRemainingCapacity", hoursRemainingCapacity, 
+					"hoursRemainingWork", hoursRemainingWork);
 
 		}
 	}

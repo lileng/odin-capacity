@@ -185,11 +185,9 @@ public class JiraHarvester {
 		JiraRestClient restClient = null;
 		URI jiraServerUri;
 		try {
-			logger.debug("url=" + AppConfig.getAppConfig().getProperty("url"));
 			jiraServerUri = new URI(AppConfig.getAppConfig().getProperty("url"));
-			
 			String usr = new String(JEncrypt.decode(AppConfig.getAppConfig().getProperty("usr").getBytes()));
-			logger.debug("usr=" + usr);
+			logger.info("url=" + AppConfig.getAppConfig().getProperty("url") + ", usr=" + usr);
 			
 			String pw = new String(JEncrypt.decode(AppConfig.getAppConfig().getProperty("pw").getBytes()));
 			logger.debug("pw=" + pw);
