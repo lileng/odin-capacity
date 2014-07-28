@@ -13,7 +13,6 @@ import odin.domain.Sprint;
 
 import org.apache.log4j.Logger;
 
-import demand.JiraHarvester;
 
 /**
  * <ol>

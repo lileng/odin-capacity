@@ -3,7 +3,8 @@ package odin.util;
 import java.io.IOException;
 import java.util.Properties;
 
-import demand.JiraHarvester;
+import odin.gateway.JiraHarvester;
+
 
 public class AppConfig {
 	static Properties defaultProps;
