@@ -1,0 +1,7 @@
+eclipse.preferences.version=1
+org.jboss.tools.openshift.ApplicationId=53b9eb2e500446f69d00045b
+org.jboss.tools.openshift.ApplicationName=jbossews
+org.jboss.tools.openshift.Connection=https\://morten%40lileng.com@
+org.jboss.tools.openshift.DeployFolder=webapps
+org.jboss.tools.openshift.Domain=odin
+org.jboss.tools.openshift.RemoteName=origin
