@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
  *
  */
 @Path("/capacity")
-public class CapacityDriver {
+public class CapacityDriver{
 	protected static Logger logger = Logger.getLogger(CapacityDriver.class);
 	// The @Context annotation allows us to have certain contextual objects
 	// injected into this class.
@@ -60,12 +60,11 @@ public class CapacityDriver {
 		logger.info("Stopping CapacityDriver");
 	}
 	
-	// Basic "is the service running" test
 	@GET
-	@Produces(MediaType.TEXT_PLAIN)
-	public String respondAsReady() {
-	    return "Demo service is ready!";
-	}
+    @Produces(value = "application/json")
+    public String ping() {
+        return "{'ping': 'pong'}";
+    }
 
 	private static void process() throws IOException {
 		logger.info("process");
