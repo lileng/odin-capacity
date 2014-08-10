@@ -122,7 +122,7 @@
 						<version>2.4</version>
 						<configuration>
 						    <failOnMissingWebXml>false</failOnMissingWebXml>
-							<outputDirectory>webapps</outputDirectory>
+							<outputDirectory>deployments</outputDirectory>
 							<warName>ROOT</warName>
 						</configuration>
 					</plugin>
