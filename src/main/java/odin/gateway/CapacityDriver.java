@@ -7,6 +7,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.UriInfo;
+
 import odin.config.Configuration;
 import odin.domain.Individual;
 import odin.domain.Observation;
@@ -29,8 +37,20 @@ import org.apache.log4j.Logger;
  * @author mlileng
  *
  */
+@Path("/capacity")
 public class CapacityDriver {
 	protected static Logger logger = Logger.getLogger(CapacityDriver.class);
+	// The @Context annotation allows us to have certain contextual objects
+	// injected into this class.
+	// UriInfo object allows us to get URI information (no kidding).
+	@Context
+	UriInfo uriInfo;
+	 
+	// Another "injected" object. This allows us to use the information that's
+	// part of any incoming request.
+	// We could, for example, get header information, or the requestor's address.
+	@Context
+	Request request;
 
 	public static void main(String[] args) throws IOException {
 		logger.info("Starting CapacityDriver");
@@ -38,6 +58,13 @@ public class CapacityDriver {
 		printClassPath();
 		process();
 		logger.info("Stopping CapacityDriver");
+	}
+	
+	// Basic "is the service running" test
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String respondAsReady() {
+	    return "Demo service is ready!";
 	}
 
 	private static void process() throws IOException {
