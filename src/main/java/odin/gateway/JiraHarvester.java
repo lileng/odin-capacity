@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
 
+import odin.config.Configuration;
 import odin.util.AppConfig;
 import odin.util.JEncrypt;
 
@@ -185,20 +186,17 @@ public class JiraHarvester {
 		JiraRestClient restClient = null;
 		URI jiraServerUri;
 		try {
-			jiraServerUri = new URI(AppConfig.getAppConfig().getProperty("url"));
-			String usr = new String(JEncrypt.decode(AppConfig.getAppConfig().getProperty("usr").getBytes()));
-			logger.info("url=" + AppConfig.getAppConfig().getProperty("url") + ", usr=" + usr);
+			jiraServerUri = new URI(Configuration.getDefaultValue("gateway.jira.url"));
+			String usr = new String(JEncrypt.decode(Configuration.getDefaultValue("gateway.jira.username").getBytes()));
+			logger.info("url=" + Configuration.getDefaultValue("gateway.jira.url") );
 			
-			String pw = new String(JEncrypt.decode(AppConfig.getAppConfig().getProperty("pw").getBytes()));
-			logger.debug("pw=" + pw);
+			String pw = new String(JEncrypt.decode(Configuration.getDefaultValue("gateway.jira.password").getBytes()));
+		//	logger.debug("pw=" + pw);
 			
 			restClient = factory.createWithBasicHttpAuthentication(
 					jiraServerUri, usr,pw);
 			logger.debug("restClient ready");
 		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

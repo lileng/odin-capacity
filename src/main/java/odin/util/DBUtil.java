@@ -25,7 +25,7 @@ public class DBUtil {
 //				props.put("eclipselink.persistencexml", "odin-persistence.xml");
 			factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT_NAME);
 		} else {
-			log.info("Using existing DB connection");
+			log.debug("Using existing DB connection");
 		}
 		return factory.createEntityManager();
 	}

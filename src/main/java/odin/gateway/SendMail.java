@@ -10,6 +10,7 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import odin.config.Configuration;
 import odin.util.AppConfig;
 
 import org.apache.log4j.Logger;
@@ -27,13 +28,13 @@ public class SendMail {
 
 	public static void sendMessage(String toEmailAddress, String ccEmailAddress, String subject,
 			String content) throws IOException {
-		String emailOverride = System.getenv("ODIN_EMAILOVERRIDE");
+		String emailOverride = Configuration.getDefaultValue("gateway.email.override");
 		if(emailOverride != null) {
-			logger.warn("ODIN_EMAILOVERRIDE set. Overriding the email address found (" + toEmailAddress + "), with the following: " + emailOverride);
+			logger.warn("gateway.email.override set. Overriding the email address found " + emailOverride);
 			toEmailAddress = emailOverride;
 		}
-		final String username = AppConfig.getAppConfig().getProperty("sendmail.username");
-		final String password = AppConfig.getAppConfig().getProperty("sendmail.password");;
+		final String username = Configuration.getDefaultValue("gateway.sendmail.username");
+		final String password = Configuration.getDefaultValue("gateway.sendmail.password");
 		logger.info("Attempting to send email message to " + toEmailAddress);
 
 		// Sender's email ID needs to be mentioned

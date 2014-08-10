@@ -9,6 +9,7 @@
 		 <class>odin.domain.Week</class>
 		 <class>odin.domain.Sprint</class>
 		 <class>odin.domain.Observation</class>
+		 <class>odin.config.Configuration</class>
 		<properties>
 			<property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver" />
 			<property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/agile" />

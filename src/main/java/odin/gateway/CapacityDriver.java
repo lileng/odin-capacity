@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import odin.config.Configuration;
 import odin.domain.Individual;
 import odin.domain.Observation;
 import odin.domain.Sprint;
@@ -82,7 +83,10 @@ public class CapacityDriver {
 			logger.info("hoursRemainingCapacity for " + username + "=" + hoursRemainingCapacity);
 		}
 		int delta = hoursRemainingCapacity - hoursRemainingWork;
-		if (delta < -40) {
+		String overAllocationThreshold = Configuration.getDefaultValue("capacity.threshold.overallocation");
+		String underAllocationThreshold = Configuration.getDefaultValue("capacity.threshold.underallocation");
+
+		if (delta < Integer.parseInt(overAllocationThreshold)) {
 			// Send mail
 			logger.info("Overallocation: HoursRemainingCapacity < hoursRemainingWork for " + username + ". Sending email to notify...");
 			Observation.recordObservation(
@@ -93,7 +97,7 @@ public class CapacityDriver {
 					hoursRemainingWork, sb);
 			Individual.recordUserContactedNow(username);
 
-		} else  if (delta > 40) {
+		} else  if (delta > Integer.parseInt(underAllocationThreshold)) {
 			// Send mail
 			logger.info("Underallocation: HoursRemainingCapacity > hoursRemainingWork for " + username + ". Sending email to notify...");
 			Observation.recordObservation(
@@ -106,7 +110,7 @@ public class CapacityDriver {
 
 		}else {
 			Observation.recordObservation(
-					username, "Allocation ok", "+/- 40hrs" + username, 
+					username, "Allocation ok", "n/a", 
 					"hoursRemainingCapacity", hoursRemainingCapacity, 
 					"hoursRemainingWork", hoursRemainingWork);
 
