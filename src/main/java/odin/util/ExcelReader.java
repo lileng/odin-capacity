@@ -2,6 +2,7 @@ package odin.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -16,9 +17,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ExcelReader {
 	public static void main(String[] args) {
+		EnvironmentUtil.printClassPath();
+		EnvironmentUtil.printEnvMap();
 		try {
+			URL url = ExcelReader.class.getResource("/Capacity.xlsx");
 			FileInputStream file = new FileInputStream(
-					new File("Capacity.xlsx"));
+					new File(url.toURI()));
+			
 
 			// Create Workbook instance holding reference to .xlsx file
 			XSSFWorkbook workbook = new XSSFWorkbook(file);
@@ -52,7 +57,7 @@ public class ExcelReader {
 						if (rowCount == 0) {
 							columns.add(cellNumber, cell.getStringCellValue());
 						} else {
-							if (cellNumber == 0)
+							if (cellNumber == 1)
 								userName = cell.getStringCellValue();
 							
 						}

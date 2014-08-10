@@ -60,6 +60,7 @@ public class CapacityDriver {
 	}
 
 	@GET
+	@Path("ping")
 	@Produces(value = "application/json")
 	public String ping() {
 		return "{'ping': 'pong'}";
