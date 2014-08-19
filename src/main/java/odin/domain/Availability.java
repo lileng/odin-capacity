@@ -54,6 +54,7 @@ public class Availability {
 
 	final static long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
 
+
 	protected static Logger log = Logger.getLogger("Availability");
 
 	public static void main(String[] args) throws Exception {
@@ -63,7 +64,7 @@ public class Availability {
 		String userName = "wsmytherin";
 		int hours = 28;
 		setAvailability(endDateS, userName, hours);
-
+		
 	}
 
 	public static void setAvailability(String endDateS, String userName,
@@ -165,7 +166,7 @@ public class Availability {
 		em.close();
 
 	}
-
+	
 	public static int getAvailability(String endDateS, String userId) {
 		SimpleDateFormat sdf = new SimpleDateFormat("M/d/yy");
 		Date endDate = null;

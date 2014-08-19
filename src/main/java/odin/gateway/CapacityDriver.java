@@ -48,6 +48,7 @@ import org.apache.log4j.Logger;
  * <li>Sends email to the individual if remaining hours > reported capacity for
  * the remaining time.
  * </ol>
+ * 
  *
  */
 @Path("/capacity")

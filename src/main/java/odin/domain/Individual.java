@@ -125,8 +125,7 @@ public class Individual {
 		EntityManager em = DBUtil.getEntityManager();
 
 		TypedQuery<Individual> q = em.createQuery(
-				"select i from Individual i WHERE i.userID=:userName",
-				Individual.class);
+				"select i from Individual i WHERE i.userID=:userName", Individual.class);
 		q.setParameter("userName", userName);
 		Individual individual = q.getSingleResult();
 		em.getTransaction().begin();

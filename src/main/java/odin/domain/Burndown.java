@@ -26,12 +26,12 @@ import javax.persistence.Id;
 
 @Entity
 public class Burndown {
-
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	public Long getSprintId() {
+    public Long getSprintId() {
 		return sprintId;
 	}
 
@@ -113,21 +113,21 @@ public class Burndown {
 
 	private Long sprintId;
 
-	private Date snapshotDate;
+    private Date snapshotDate;
 
-	private Integer sumEstimated;
+    private Integer sumEstimated;
 
-	private Integer sumLogged;
+    private Integer sumLogged;
 
-	private Integer sumRemaining;
+    private Integer sumRemaining;
 
-	private Integer sumIdealRemaining;
+    private Integer sumIdealRemaining;
 
-	private Integer sumTickets;
+    private Integer sumTickets;
 
-	private Integer sumStatusNew;
+    private Integer sumStatusNew;
 
-	private Integer sumStatusInProgress;
+    private Integer sumStatusInProgress;
 
-	private Integer sumStatusDone;
+    private Integer sumStatusDone;
 }
