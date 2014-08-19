@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package odin.domain;
 
 import java.text.SimpleDateFormat;
@@ -14,13 +31,14 @@ import odin.util.DBUtil;
 
 @Entity
 public class Observation {
-	
-	public static void recordObservation(String userName, String type, String description, String key1, int value1, String key2, int value2){
+
+	public static void recordObservation(String userName, String type,
+			String description, String key1, int value1, String key2, int value2) {
 		EntityManager em = DBUtil.getEntityManager();
 		Observation observation = new Observation();
 
 		em.getTransaction().begin();
-		
+
 		observation.setUsername(userName);
 		observation.setType(type);
 		observation.setRegisteredDate(new Date());
@@ -37,7 +55,7 @@ public class Observation {
 	@Id
 	@GeneratedValue
 	private Long id;
-	
+
 	private String username;
 
 	public String getUsername() {
@@ -50,16 +68,15 @@ public class Observation {
 
 	@Temporal(TemporalType.DATE)
 	private Date registeredDate;
-	
+
 	private String type;
 	private String description;
 
 	private String key1;
 	private int value1;
-	
+
 	private String key2;
 	private int value2;
-	
 
 	public String getKey1() {
 		return key1;
@@ -116,7 +133,6 @@ public class Observation {
 	public void setRegisteredDate(Date registeredDate) {
 		this.registeredDate = registeredDate;
 	}
-	
 
 	public Long getId() {
 		return id;
@@ -125,7 +141,6 @@ public class Observation {
 	public void setId(Long id) {
 		this.id = id;
 	}
-	
 
 	@Override
 	public String toString() {

@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package odin.gateway;
 
 import java.io.IOException;
@@ -27,8 +44,7 @@ import com.atlassian.jira.rest.client.domain.Version;
 import com.atlassian.jira.rest.client.internal.jersey.JerseyJiraRestClientFactory;
 
 /**
- * 
- * @author mol
+ * The harvester is responsible for collecting JIRA tasks from a given project.
  * 
  */
 public class JiraHarvester {
@@ -38,50 +54,42 @@ public class JiraHarvester {
 
 	private static String url, usr, pw;
 
-	public static void main(String args[]) {
-		printClassPath();
-		JiraHarvester harvester = new JiraHarvester();
-		try {
-			Object harvestedObjects = harvester.collect(null, "Sprint 2013.12",
-					"mlileng");
-			// JiraIssueHbaseGateway.insert(harvestedObjects);
-		} catch (IOException e) {
-			logger.fatal(e);
-		}
-	}
-
 	public static int collectHoursRemainingWork(String project, String sprint,
 			String assignee) throws IOException {
 		int minutesRemainingWork = 0;
 		int hoursRemainingWork = 0;
-		Set<Hashtable<String, String>> collectedData = collect(project, sprint, assignee);
+		Set<Hashtable<String, String>> collectedData = collect(project, sprint,
+				assignee);
 
 		for (Hashtable<String, String> keyValue : collectedData) {
-			if (keyValue.get("remainingEstimateMinutes") != null && !keyValue.get("remainingEstimateMinutes").equals("null")) {		
-				minutesRemainingWork = minutesRemainingWork + Integer.parseInt(keyValue
-						.get("remainingEstimateMinutes"));
+			if (keyValue.get("remainingEstimateMinutes") != null
+					&& !keyValue.get("remainingEstimateMinutes").equals("null")) {
+				minutesRemainingWork = minutesRemainingWork
+						+ Integer.parseInt(keyValue
+								.get("remainingEstimateMinutes"));
 			}
 		}
-		if(minutesRemainingWork > 0){
+		if (minutesRemainingWork > 0) {
 			hoursRemainingWork = minutesRemainingWork / 60;
 			logger.info("hoursRemainingWork=" + hoursRemainingWork);
 		}
 		return hoursRemainingWork;
 	}
-	
-	public static Hashtable<String, String> getTasksWithRemainingWork(String project, String sprint,
-			String assignee) throws IOException {
+
+	public static Hashtable<String, String> getTasksWithRemainingWork(
+			String project, String sprint, String assignee) throws IOException {
 		Hashtable<String, String> kv = new Hashtable<String, String>();
-		Set<Hashtable<String, String>> collectedData = collect(project, sprint, assignee);
+		Set<Hashtable<String, String>> collectedData = collect(project, sprint,
+				assignee);
 
 		for (Hashtable<String, String> keyValue : collectedData) {
-			if (keyValue.get("remainingEstimateMinutes") != null 
+			if (keyValue.get("remainingEstimateMinutes") != null
 					&& !keyValue.get("remainingEstimateMinutes").equals("null")
 					&& !keyValue.get("remainingEstimateMinutes").equals("0")) {
 				kv.put(keyValue.get("key"), keyValue.get("summary"));
 			}
 		}
-	
+
 		return kv;
 	}
 
@@ -90,7 +98,7 @@ public class JiraHarvester {
 
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 		final NullProgressMonitor pm = new NullProgressMonitor();
-		
+
 		logger.info("Get projects in Jira");
 		// First get all projects that the user knows about in JIRA
 		Iterable<BasicProject> projects = getRestClient().getProjectClient()
@@ -169,7 +177,6 @@ public class JiraHarvester {
 
 	}
 
-
 	private static void printClassPath() {
 		ClassLoader cl = ClassLoader.getSystemClassLoader();
 
@@ -186,15 +193,19 @@ public class JiraHarvester {
 		JiraRestClient restClient = null;
 		URI jiraServerUri;
 		try {
-			jiraServerUri = new URI(Configuration.getDefaultValue("gateway.jira.url"));
-			String usr = new String(JEncrypt.decode(Configuration.getDefaultValue("gateway.jira.username").getBytes()));
-			logger.info("url=" + Configuration.getDefaultValue("gateway.jira.url") );
-			
-			String pw = new String(JEncrypt.decode(Configuration.getDefaultValue("gateway.jira.password").getBytes()));
-		//	logger.debug("pw=" + pw);
-			
+			jiraServerUri = new URI(
+					Configuration.getDefaultValue("gateway.jira.url"));
+			String usr = new String(JEncrypt.decode(Configuration
+					.getDefaultValue("gateway.jira.username").getBytes()));
+			logger.info("url="
+					+ Configuration.getDefaultValue("gateway.jira.url"));
+
+			String pw = new String(JEncrypt.decode(Configuration
+					.getDefaultValue("gateway.jira.password").getBytes()));
+			// logger.debug("pw=" + pw);
+
 			restClient = factory.createWithBasicHttpAuthentication(
-					jiraServerUri, usr,pw);
+					jiraServerUri, usr, pw);
 			logger.debug("restClient ready");
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
