@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+The OpenShift `jbossews` cartridge documentation can be found at:
+
+http://openshift.github.io/documentation/oo_cartridge_guide.html#tomcat
+=======
 NAME
     Agile
 
@@ -25,3 +30,4 @@ AUTHORS / CONTRIBUTORS
     Morten Lileng
  
  
+>>>>>>> b790155901da0246069c1a766e8216e05a117eaf

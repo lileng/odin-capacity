@@ -4,17 +4,19 @@
 	version="2.0" xmlns="http://java.sun.com/xml/ns/persistence">
 	<persistence-unit name="individuals" transaction-type="RESOURCE_LOCAL">
 		<class>odin.domain.Availability</class>
-		 <class>odin.domain.AvailabilityId</class>
+		<class>odin.domain.AvailabilityId</class>
 		<class>odin.domain.Individual</class>
-		 <class>odin.domain.Week</class>
-		 <class>odin.domain.Sprint</class>
+		<class>odin.domain.Week</class>
+		<class>odin.domain.Sprint</class>
+		<class>odin.domain.Observation</class>
+		<class>odin.config.Configuration</class>
 		<properties>
 			<property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver" />
-			<property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:${OPENSHIFT_MYSQL_DB_PORT}/agile" />
+			<property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/agile" />
 			<!-- jdbc:mysql://${OPENSHIFT_MYSQL_DB_HOST}:${OPENSHIFT_MYSQL_DB_PORT}/agile -->
 			<!-- dbc:mysql://localhost:60140/agile -->
-			<property name="javax.persistence.jdbc.user" value="adminzlKTJjz" />
-			<property name="javax.persistence.jdbc.password" value="wzNNybykH1ev" />
+			<property name="javax.persistence.jdbc.user" value="root" />
+			<property name="javax.persistence.jdbc.password" value="" />
 
 			<!-- EclipseLink should create the database schema automatically -->
 			<property name="eclipselink.ddl-generation" value="create-tables" />
