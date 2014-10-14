@@ -38,7 +38,7 @@ public class SendMail {
 	public static void main(String[] args) throws IOException {
 		String cctest[] = {"mlileng@merkleinc.com"};
 		sendMessage(
-				"morten@lileng.com",
+				"mol@lileng.com", 
 				cctest,
 				"test subject",
 				"<img src=\"http://capacity-odin.rhcloud.com/images/agile-odin.jpg\" alt=\"odin\" width=\"800\" height=\"75\" />");

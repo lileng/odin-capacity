@@ -66,7 +66,7 @@ public class JiraHarvester {
 		if (minutesRemainingWork > 0) {
 			hoursRemainingWork = minutesRemainingWork / 60;
 			logger.info("hoursRemainingWork=" + hoursRemainingWork);
-		}
+		} 
 		return hoursRemainingWork;
 	}
 

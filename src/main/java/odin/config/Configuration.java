@@ -25,7 +25,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
 import odin.util.DBUtil;
-import odin.util.JEncrypt;
+import odin.util.JEncrypt; 
 
 @Entity
 public class Configuration {
