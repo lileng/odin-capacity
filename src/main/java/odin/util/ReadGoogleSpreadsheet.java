@@ -18,9 +18,11 @@
 package odin.util;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -28,6 +30,7 @@ import java.util.List;
 
 import odin.config.Configuration;
 import odin.domain.Availability;
+import odin.gateway.SendMail;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -52,6 +55,13 @@ public class ReadGoogleSpreadsheet {
 	public static void main(String[] args) throws AuthenticationException,
 			MalformedURLException, IOException, ServiceException,
 			URISyntaxException, ParseException {
+		process(args);
+
+	}
+
+	public static void process(String[] args) throws MalformedURLException,
+			IOException, ServiceException, AuthenticationException,
+			ParseException {
 		SPREADSHEET_FEED_URL = new URL(
 				"https://spreadsheets.google.com/feeds/spreadsheets/private/full");
 
@@ -99,7 +109,29 @@ public class ReadGoogleSpreadsheet {
 			}
 			logger.info(sb.toString());
 
+
 		}
+		String[] notificationList = Configuration.getDefaultValue("odin.notify.prod.to")
+				.split(" ");
+		
+		SendMail.sendMessage(notificationList, null, "The Job ReadGoogleSpreadsheet Completed Normally", getJobContent());
+	}
+	
+	private static String getJobContent() {
+		String hostName = "-";
+		try {
+			hostName = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			logger.warn(e);
+		}
+		String returnValue = "<p>Running on: <ul><li>" +
+				hostName + "</li></ul>" +
+				"<p>Job Exit Code: <ul><li>0</li></ul>" + 
+				
+				"<p>Job Output: <ul><li>n/a</li></ul>";
+		logger.info(returnValue);
+		return returnValue;
 
 	}
 
