@@ -27,18 +27,25 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.ws.rs.core.MediaType;
 
 import odin.config.Configuration;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
+
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.representation.Form;
 
 public class SendMail {
 	protected static Logger logger = Logger.getLogger(SendMail.class);
 
 	public static void main(String[] args) throws IOException {
-		String cctest[] = {"mlileng@merkleinc.com"};
+		String cctest[] = { "mlileng@merkleinc.com" };
 		sendMessage(
-				"mol@lileng.com", 
+				"mol@lileng.com",
 				cctest,
 				"test subject",
 				"<img src=\"http://capacity-odin.rhcloud.com/images/agile-odin.jpg\" alt=\"odin\" width=\"800\" height=\"75\" />");
@@ -64,18 +71,13 @@ public class SendMail {
 		String from = "odin@lileng.com";
 
 		// Assuming you are sending email from localhost
-		String host = Configuration
-				.getDefaultValue("mail.smtp.host");
+		String host = Configuration.getDefaultValue("mail.smtp.host");
 
 		// Get system properties
 		Properties props = System.getProperties();
 
 		// Setup mail server
 		props.setProperty("mail.smtp.host", host);
-//		props.put("mail.smtp.auth", "true");
-//		props.put("mail.smtp.starttls.enable", "true");
-//		props.put("mail.smtp.host", "smtp.gmail.com");
-//		props.put("mail.smtp.port", "587");
 
 		// Get the default Session object.
 		Session session = Session.getInstance(props,
@@ -112,5 +114,46 @@ public class SendMail {
 			mex.printStackTrace();
 			logger.error(mex);
 		}
+	}
+
+	public static void sendMessage(String toEmailAddress[],
+			String ccEmailAddress[], String subject, String content)
+			throws IOException {
+
+		logger.info("Attempting to send email message to " + ToStringBuilder.reflectionToString(toEmailAddress));
+		
+
+		// Sender's email ID needs to be mentioned
+		String from = Configuration.getDefaultValue("odin.notify.prod.from");
+		
+		Client client = Client.create();
+		Form form = new Form();
+		form.add("api_user", Configuration.getDefaultValue("sendgrid.api_user"));
+		form.add("api_key", Configuration.getDefaultValue("sendgrid.api_key"));
+		// Set To: header field of the header.
+		for (int i = 0; i < toEmailAddress.length; i++) {
+					form.add("to[]", toEmailAddress[i]);
+		}
+
+		form.add("subject", subject);
+		form.add("html", content);
+		form.add("from", from);
+		
+		WebResource webResource = client.resource("https://api.sendgrid.com/api/mail.send.json");
+		ClientResponse response = webResource.type(MediaType.APPLICATION_FORM_URLENCODED).post(ClientResponse.class, form);
+		String output = response.getEntity(String.class);
+		 
+		logger.info("Output from Server ....");
+		logger.info(output);
+		
+		if (response.getStatus() != 200) {
+			   throw new RuntimeException("Failed : HTTP error code : "
+				+ response.getStatus());
+			}
+	 
+
+
+
+			logger.info("Sent message successfully to " + ToStringBuilder.reflectionToString(toEmailAddress));
 	}
 }
