@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package odin.gateway; 
+package odin.gateway;
 
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.text.ParseException;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +38,13 @@ import odin.config.Configuration;
 import odin.domain.Individual;
 import odin.domain.Observation;
 import odin.domain.Sprint;
+import odin.util.ReadGoogleSpreadsheet;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
+
+import com.google.gdata.util.AuthenticationException;
+import com.google.gdata.util.ServiceException;
 
 /**
  * <ol>
@@ -69,11 +75,18 @@ public class CapacityDriver {
 	Request request;
 
 	public static void main(String[] args) throws IOException,
-			InterruptedException, ExecutionException {
-		logger.info("Starting CapacityDriver");
+			InterruptedException, ExecutionException, AuthenticationException,
+			ServiceException, ParseException {
+		logger.info("Starting CapacityDriver with arguments: "
+				+ ToStringBuilder.reflectionToString(args));
 		printEnvMap();
 		printClassPath();
-		process();
+		if (args.length == 0) {
+			process();
+		} else {
+			// Assume processing is to only sync up the capacity spreadsheet.
+			ReadGoogleSpreadsheet.process(args);
+		}
 		logger.info("Stopping CapacityDriver");
 	}
 
