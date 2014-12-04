@@ -179,7 +179,11 @@ public class JiraHarvester {
 				// logger.info("getSummary = " + subtask.getSummary());
 
 				// 3. Update active subtasks with new rank
-				updateRank(subtask.getKey(), parentRank, customRankingField1); // TODO: Also make work for other custom ranking field
+				if (issue.getField(customRankingField1) != null) {
+					updateRank(subtask.getKey(), parentRank, customRankingField1);
+				} else if(issue.getField(customRankingField2) != null) {
+					updateRank(subtask.getKey(), parentRank, customRankingField2);
+				}
 			}
 			response.setReasonPhrase("OK");
 
