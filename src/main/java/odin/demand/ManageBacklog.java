@@ -38,9 +38,11 @@ public class ManageBacklog {
 	static String[] notificationList = Configuration.getDefaultValue(
 			"odin.notify.prod.to").split(" ");
 
-	public static void main(String[] args){
-		updateSubtaskRanking();
+	public static void main(String[] args) {
+		// updateSubtaskRanking();
+		zeroRemainingHoursForDoneTasks();
 	}
+
 	public static void updateSubtaskRanking() {
 		try {
 			OdinResponse response = new OdinResponse();
@@ -102,7 +104,6 @@ public class ManageBacklog {
 					}
 				}
 				response.setReasonPhrase("OK");
-
 			}
 
 			try {
@@ -127,6 +128,80 @@ public class ManageBacklog {
 			} catch (IOException ee) {
 				e.printStackTrace();
 				logger.error("Unable to send email notification", ee);
+			}
+		}
+	}
+
+	public static void zeroRemainingHoursForDoneTasks() {
+		// 1. Event (batch)
+		// 2. Condition
+		String jql = Configuration
+				.getDefaultValue("task.calibration.jql.1"); // findDoneTasksWithRemaining
+
+		int maxResults = 1000;
+		int startAt = 0;
+		logger.info("Executing JQL = " + jql);
+		logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
+		Promise<SearchResult> searchResultPromise = null;
+
+		searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
+				.searchJql(jql, maxResults, startAt, null);
+
+		SearchResult searchResult = searchResultPromise.claim();
+
+		Iterable<? extends Issue> issues = searchResult.getIssues();
+		int totalToZero = 0;
+		int totalZeroed = 0;
+		for (Issue issue : issues) {
+			int minutes = 0;
+			if (issue.getField("timeestimate") != null) {
+				minutes = (int) issue.getField("timeestimate").getValue();
+			}
+			String status = issue.getStatus().getName();
+			totalToZero++;
+			logger.info("Issue# " + totalToZero + ": issue.key="
+					+ issue.getKey() + ". Status=" + status
+					+ ". Remaining minutes=" + minutes);
+
+			// 3. Perfom action
+			totalZeroed = totalZeroed + setRemainingToZero(issue.getKey());
+		}
+
+		// 4. Communicate
+		if (totalZeroed != totalToZero) {
+			String content = getJobContent(
+					-1,
+					"NOT ABLE TO UPDATE ALL TASKS<P>  <ul><li>Total issues found: "
+							+ totalToZero
+							+ "</li><li>Total issues updated to zero remaining: "
+							+ totalZeroed + "</li></ul>");
+
+			try {
+				SendMail.sendMessage(
+						notificationList,
+						null,
+						"The Job ManageBacklog.zeroRemainingHoursForDoneTasks Completed Abnormally",
+						content);
+			} catch (IOException e) {
+				e.printStackTrace();
+				logger.error("Unable to send email notification", e);
+			}
+
+		} else {
+			String content = getJobContent(0, "<ul><li>Total issues found: "
+					+ totalToZero
+					+ "</li><li>Total issues updated to zero remaining: "
+					+ totalZeroed + "</li></ul>");
+
+			try {
+				SendMail.sendMessage(
+						notificationList,
+						null,
+						"The Job ManageBacklog.zeroRemainingHoursForDoneTasks Completed Normally",
+						content);
+			} catch (IOException e) {
+				e.printStackTrace();
+				logger.error("Unable to send email notification", e);
 			}
 		}
 	}
@@ -185,6 +260,37 @@ public class ManageBacklog {
 		}
 	}
 
+	private static int setRemainingToZero(String key) {
+
+		String url = baseURL + "/rest/api/2/issue/" + key;
+		Client client = Client.create();
+		WebResource webResource = client.resource(url);
+
+		// client.addFilter(new
+		// com.sun.jersey.api.client.filter.LoggingFilter());
+		client.addFilter(new HTTPBasicAuthFilter(usr, pw));
+		String jsonRequest = "{\n   \"fields\": { \n    \"timetracking\": {  \"remainingEstimate\": \"0\" } \n   } \n }";
+		logger.info("Preparing to update url=" + url + ", with JSON="
+				+ jsonRequest);
+
+		ClientResponse clientResponse = webResource
+				.accept(MediaType.APPLICATION_JSON)
+				.header("Content-Type", "application/json")
+				.put(ClientResponse.class, jsonRequest);
+
+		// String output = clientResponse.getEntity(String.class);
+		// logger.info("Output from Server .... \n");
+		// logger.info(output);
+		if (clientResponse.getStatus() != 204) {
+			logger.warn(key + " failed update: HTTP error code : "
+					+ clientResponse.getStatus());
+			return 0;
+		}
+		logger.info(key + " updated successfully: HTTP code : "
+				+ clientResponse.getStatus());
+		return 1;
+	}
+
 	private static String getJobContent() {
 		String hostName = "-";
 		try {
@@ -197,6 +303,22 @@ public class ManageBacklog {
 				+ "</li></ul>" + "<p>Job Exit Code: <ul><li>0</li></ul>" +
 
 				"<p>Job Output: <ul><li>n/a</li></ul>";
+		logger.info(returnValue);
+		return returnValue;
+
+	}
+
+	private static String getJobContent(int exitCode, String jobOutput) {
+		String hostName = "-";
+		try {
+			hostName = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			logger.warn(e);
+		}
+		String returnValue = "<p>Running on: <ul><li>" + hostName
+				+ "</li></ul>" + "<p>Job Exit Code: <ul><li>" + exitCode
+				+ "</li></ul>" + "<p>Job Output: <p>" + jobOutput;
 		logger.info(returnValue);
 		return returnValue;
 
