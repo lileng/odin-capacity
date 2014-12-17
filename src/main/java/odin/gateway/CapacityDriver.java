@@ -35,6 +35,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.UriInfo;
 
 import odin.config.Configuration;
+import odin.demand.ManageBacklog;
 import odin.domain.Individual;
 import odin.domain.Observation;
 import odin.domain.Sprint;
@@ -82,6 +83,7 @@ public class CapacityDriver {
 		printEnvMap();
 		printClassPath();
 		if (args.length == 0) {
+			ManageBacklog.main(null);
 			process();
 		} else {
 			// Assume processing is to only sync up the capacity spreadsheet.

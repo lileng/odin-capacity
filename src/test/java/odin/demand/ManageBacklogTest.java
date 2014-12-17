@@ -18,8 +18,8 @@ public class ManageBacklogTest {
 
 	@Test
 	public void testUpdateSubtaskRanking() {
-		
-		ManageBacklog.updateSubtaskRanking();
+		OdinResponse res = new OdinResponse();
+		ManageBacklog.updateSubtaskRanking(res);
 		
 	}
 

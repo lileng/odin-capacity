@@ -39,91 +39,31 @@ public class ManageBacklog {
 			"odin.notify.prod.to").split(" ");
 
 	public static void main(String[] args) {
-		// updateSubtaskRanking();
-		zeroRemainingHoursForDoneTasks();
-	}
-
-	public static void updateSubtaskRanking() {
+		OdinResponse res = new OdinResponse();
 		try {
-			OdinResponse response = new OdinResponse();
-			String customRankingField1 = Configuration
-					.getDefaultValue("task.calibration.jira.rankfield.1");
-			String customRankingField2 = Configuration
-					.getDefaultValue("task.calibration.jira.rankfield.2");
-			List<String> parentKeys = getParentKeySelection();
-
-			for (String parentKey : parentKeys) {
-
-				// 1. Get rank from parent
-				logger.info("Get rank from parentKey=" + parentKey);
-				Issue issue = JIRAGateway.getRestClient().getIssueClient()
-						.getIssue(parentKey).claim();
-				int parentRank = 0;
-
-				if (issue.getField(customRankingField1) != null) {
-					IssueField field = issue.getField(customRankingField1);
-					parentRank = (int) (double) field.getValue(); // TODO: Catch
-					// ClassCastException or
-					// NullPointerException
-
-				} else if (issue.getField(customRankingField2) != null) {
-					IssueField field = issue.getField(customRankingField2);
-					parentRank = (int) (double) field.getValue(); // TODO: Catch
-					// ClassCastException or
-					// NullPointerException
-				}
-				logger.info("Parent key=" + parentKey + ", parentRank="
-						+ parentRank);
-
-				// 2. Get active subtasks
-				String jql = "status not in (Done, Invalid) AND parent = "
-						+ parentKey;
-				int maxResults = 1000;
-				int startAt = 0;
-				logger.info("Executing JQL = " + jql);
-				logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
-				Promise<SearchResult> searchResultPromise = null;
-
-				searchResultPromise = JIRAGateway.getRestClient()
-						.getSearchClient().searchJql(jql);
-
-				SearchResult searchResult = searchResultPromise.claim();
-
-				Iterable<? extends Issue> subtasks = searchResult.getIssues();
-				for (Issue subtask : subtasks) {
-					logger.info("subtask.key=" + subtask.getKey());
-					// logger.info("getSummary = " + subtask.getSummary());
-
-					// 3. Update active subtasks with new rank
-					if (issue.getField(customRankingField1) != null) {
-						updateRank(subtask.getKey(), parentRank,
-								customRankingField1);
-					} else if (issue.getField(customRankingField2) != null) {
-						updateRank(subtask.getKey(), parentRank,
-								customRankingField2);
-					}
-				}
-				response.setReasonPhrase("OK");
+			updateSubtaskRanking(res);
+			zeroRemainingHoursForDoneTasks(res);
+			notifyAssigneeOfOldTickets(res);
+			
+			String header = "The Job ManageBacklog Completed Normally";
+			if(res.getStatusCode()!=0){
+				header = "The Job ManageBacklog Completed Abnormally";
 			}
-
 			try {
-				SendMail.sendMessage(
-						notificationList,
-						null,
-						"The Job ManageBacklog.updateSubtaskRanking Completed Normally",
-						getJobContent());
+				SendMail.sendMessage(notificationList, null,
+						header,
+						res.toString());
 			} catch (IOException e) {
 				e.printStackTrace();
 				logger.error("Unable to send email notification", e);
 			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			logger.error("Unable to complete job", e);
 			try {
-				SendMail.sendMessage(
-						notificationList,
-						null,
-						"The Job ManageBacklog.updateSubtaskRanking Completed Abnormally",
+				SendMail.sendMessage(notificationList, null,
+						"The Job ManageBacklog Completed Abnormally",
 						e.getMessage());
 			} catch (IOException ee) {
 				e.printStackTrace();
@@ -132,11 +72,83 @@ public class ManageBacklog {
 		}
 	}
 
-	public static void zeroRemainingHoursForDoneTasks() {
+	public static void updateSubtaskRanking(OdinResponse res) {
+		int updatedSubtasks = 0;
+		String customRankingField1 = Configuration
+				.getDefaultValue("task.calibration.jira.rankfield.1");
+		String customRankingField2 = Configuration
+				.getDefaultValue("task.calibration.jira.rankfield.2");
+		List<String> parentKeys = getParentKeySelection();
+
+		for (String parentKey : parentKeys) {
+
+			// 1. Get rank from parent
+			logger.info("Get rank from parentKey=" + parentKey);
+			Issue issue = JIRAGateway.getRestClient().getIssueClient()
+					.getIssue(parentKey).claim();
+			int parentRank = 0;
+
+			if (issue.getField(customRankingField1) != null) {
+				IssueField field = issue.getField(customRankingField1);
+				parentRank = (int) (double) field.getValue(); // TODO: Catch
+				// ClassCastException or
+				// NullPointerException
+
+			} else if (issue.getField(customRankingField2) != null) {
+				IssueField field = issue.getField(customRankingField2);
+				parentRank = (int) (double) field.getValue(); // TODO: Catch
+				// ClassCastException or
+				// NullPointerException
+			}
+			logger.info("Parent key=" + parentKey + ", parentRank="
+					+ parentRank);
+
+			// 2. Get active subtasks
+			String jql = "status not in (Done, Invalid) AND parent = "
+					+ parentKey;
+			int maxResults = 1000;
+			int startAt = 0;
+			logger.info("Executing JQL = " + jql);
+			logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
+			Promise<SearchResult> searchResultPromise = null;
+
+			searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
+					.searchJql(jql);
+
+			SearchResult searchResult = searchResultPromise.claim();
+
+			Iterable<? extends Issue> subtasks = searchResult.getIssues();
+			for (Issue subtask : subtasks) {
+				logger.info("subtask.key=" + subtask.getKey());
+				// logger.info("getSummary = " + subtask.getSummary());
+
+				// 3. Update active subtasks with new rank
+				if (subtask.getField(customRankingField1) != null) {
+					updateRank(subtask.getKey(), parentRank,
+							customRankingField1);
+				} else if (subtask.getField(customRankingField2) != null) {
+					IssueField rank = subtask.getField(customRankingField2);
+					int rankValue = 0;
+					if(rank.getValue() != null) rankValue = ((Double) rank.getValue()).intValue();
+					if (rankValue != parentRank) {
+						updateRank(subtask.getKey(), parentRank,
+								customRankingField2);
+						updatedSubtasks++;
+					}
+				}
+			}
+		}
+		res.setStatusCode(0);
+		res.setReasonPhrase("OK");
+		res.setMessageBody("<p>ManageBacklog.updateSubtaskRanking Completed Successfully. updatedSubtasks: "
+				+ updatedSubtasks);
+
+	}
+
+	public static OdinResponse zeroRemainingHoursForDoneTasks(OdinResponse res) {
 		// 1. Event (batch)
 		// 2. Condition
-		String jql = Configuration
-				.getDefaultValue("task.calibration.jql.1"); // findDoneTasksWithRemaining
+		String jql = Configuration.getDefaultValue("task.calibration.jql.1"); // findDoneTasksWithRemaining
 
 		int maxResults = 1000;
 		int startAt = 0;
@@ -169,41 +181,18 @@ public class ManageBacklog {
 
 		// 4. Communicate
 		if (totalZeroed != totalToZero) {
-			String content = getJobContent(
-					-1,
-					"NOT ABLE TO UPDATE ALL TASKS<P>  <ul><li>Total issues found: "
-							+ totalToZero
-							+ "</li><li>Total issues updated to zero remaining: "
-							+ totalZeroed + "</li></ul>");
-
-			try {
-				SendMail.sendMessage(
-						notificationList,
-						null,
-						"The Job ManageBacklog.zeroRemainingHoursForDoneTasks Completed Abnormally",
-						content);
-			} catch (IOException e) {
-				e.printStackTrace();
-				logger.error("Unable to send email notification", e);
-			}
-
-		} else {
-			String content = getJobContent(0, "<ul><li>Total issues found: "
+			res.setStatusCode(-1);
+			res.setMessageBody("<p>ManageBacklog.zeroRemainingHoursForDoneTasks Completed Abnormally: NOT ABLE TO UPDATE ALL TASKS<P>  <ul><li>Total issues found: "
 					+ totalToZero
 					+ "</li><li>Total issues updated to zero remaining: "
 					+ totalZeroed + "</li></ul>");
-
-			try {
-				SendMail.sendMessage(
-						notificationList,
-						null,
-						"The Job ManageBacklog.zeroRemainingHoursForDoneTasks Completed Normally",
-						content);
-			} catch (IOException e) {
-				e.printStackTrace();
-				logger.error("Unable to send email notification", e);
-			}
+		} else {
+			res.setStatusCode(0);
+			res.setMessageBody("<p>ManageBacklog.zeroRemainingHoursForDoneTasks Completed Successfully.<ul><li>Total issues found: " + totalToZero
+					+ "</li><li>Total issues updated to zero remaining: "
+					+ totalZeroed + "</li></ul>");
 		}
+		return res;
 	}
 
 	private static List<String> getParentKeySelection() {
@@ -290,38 +279,17 @@ public class ManageBacklog {
 				+ clientResponse.getStatus());
 		return 1;
 	}
-
-	private static String getJobContent() {
-		String hostName = "-";
-		try {
-			hostName = InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			logger.warn(e);
-		}
-		String returnValue = "<p>Running on: <ul><li>" + hostName
-				+ "</li></ul>" + "<p>Job Exit Code: <ul><li>0</li></ul>" +
-
-				"<p>Job Output: <ul><li>n/a</li></ul>";
-		logger.info(returnValue);
-		return returnValue;
-
+	
+	private static void notifyAssigneeOfOldTickets(OdinResponse res){
+		// 1. Find current sprint
+		// 2. Find tickets that are NOT associated to current sprint, "Sprint *", "Product Backlog" or unassigned
+		//                  AND where Status is NOT "invalid" or "Done".
+		//                  FROM projects in scope.
+		// 3. Group tickets by assignee
+		// 4. Get email addresses of assignee, manager and JIRA project owner
+		// 5. Send email notification to assignee, with CC to manager and JIRA project owner.
+		// 6. Insert observation into database
+		// 7. Send notification to ODIN administrators.
+		
 	}
-
-	private static String getJobContent(int exitCode, String jobOutput) {
-		String hostName = "-";
-		try {
-			hostName = InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			logger.warn(e);
-		}
-		String returnValue = "<p>Running on: <ul><li>" + hostName
-				+ "</li></ul>" + "<p>Job Exit Code: <ul><li>" + exitCode
-				+ "</li></ul>" + "<p>Job Output: <p>" + jobOutput;
-		logger.info(returnValue);
-		return returnValue;
-
-	}
-
 }

@@ -5,7 +5,7 @@
 	<artifactId>odin-capacity</artifactId>
 	<packaging>jar</packaging>
 	<version>1.0</version>
-	<name>jbossews</name>
+	<name>odin-capacity</name>
 	<repositories>
 
 		<repository>
@@ -120,6 +120,13 @@
 			<artifactId>jersey-client</artifactId>
 			<version>1.8</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.7</version>
+		</dependency>
+
 
 	</dependencies>
 

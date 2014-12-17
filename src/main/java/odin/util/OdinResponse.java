@@ -59,26 +59,25 @@ public class OdinResponse {
 	}
 
 	public String getMessageBody() {
-		return messageBody;
+		return messageBody.toString();
 	}
 
 	public void setMessageBody(String messageBody) {
-		this.messageBody = messageBody;
+		this.messageBody.append(messageBody);
 	}
 
 	@Override
 	public String toString() {
-		String returnValue = "Running on: " + hostName + ". Exit Code: "
-				+ this.getStatusCode() + ". ReasonPhrase: "
-				+ this.getReasonPhrase() + ". MessageBody: "
+		String returnValue = "<p>Running on: " + hostName + ". <p>Exit Code: " + this.getStatusCode()
+				+ "<p>Job Output: <p>"
 				+ this.getMessageBody();
-		return returnValue;
+			return returnValue;
 
 	}
 
 	private String hostName = "-";
-	private int statusCode;
-	private String reasonPhrase;
-	private String messageBody;
+	private int statusCode = 0;
+	private String reasonPhrase = "";
+	private StringBuffer messageBody = new StringBuffer();
 
 }
