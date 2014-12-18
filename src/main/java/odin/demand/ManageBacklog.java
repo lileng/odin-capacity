@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
 
@@ -44,14 +45,13 @@ public class ManageBacklog {
 			updateSubtaskRanking(res);
 			zeroRemainingHoursForDoneTasks(res);
 			notifyAssigneeOfOldTickets(res);
-			
+
 			String header = "The Job ManageBacklog Completed Normally";
-			if(res.getStatusCode()!=0){
+			if (res.getStatusCode() != 0) {
 				header = "The Job ManageBacklog Completed Abnormally";
 			}
 			try {
-				SendMail.sendMessage(notificationList, null,
-						header,
+				SendMail.sendMessage(notificationList, null, header,
 						res.toString());
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -78,71 +78,84 @@ public class ManageBacklog {
 				.getDefaultValue("task.calibration.jira.rankfield.1");
 		String customRankingField2 = Configuration
 				.getDefaultValue("task.calibration.jira.rankfield.2");
-		List<String> parentKeys = getParentKeySelection();
 
-		for (String parentKey : parentKeys) {
+		// for each project in program, update subtask ranking
+		String[] projectCodes = Configuration.getDefaultValue(
+				"task.calibration.jira.projects").split(",");
 
-			// 1. Get rank from parent
-			logger.info("Get rank from parentKey=" + parentKey);
-			Issue issue = JIRAGateway.getRestClient().getIssueClient()
-					.getIssue(parentKey).claim();
-			int parentRank = 0;
+		for (int i = 0; i < projectCodes.length; i++) {
+			List<String> parentKeys = getParentKeySelection(projectCodes[i]);
 
-			if (issue.getField(customRankingField1) != null) {
-				IssueField field = issue.getField(customRankingField1);
-				parentRank = (int) (double) field.getValue(); // TODO: Catch
-				// ClassCastException or
-				// NullPointerException
+			for (String parentKey : parentKeys) {
 
-			} else if (issue.getField(customRankingField2) != null) {
-				IssueField field = issue.getField(customRankingField2);
-				parentRank = (int) (double) field.getValue(); // TODO: Catch
-				// ClassCastException or
-				// NullPointerException
+				updatedSubtasks = updateSubtaskRanking(updatedSubtasks,
+						customRankingField1, customRankingField2, parentKey);
 			}
-			logger.info("Parent key=" + parentKey + ", parentRank="
-					+ parentRank);
+			res.setStatusCode(0);
+			res.setReasonPhrase("OK");
+			res.setMessageBody("<p>ManageBacklog.updateSubtaskRanking Completed Successfully for project "+projectCodes[i] +". UpdatedSubtasks: "
+					+ updatedSubtasks);
+		}
 
-			// 2. Get active subtasks
-			String jql = "status not in (Done, Invalid) AND parent = "
-					+ parentKey;
-			int maxResults = 1000;
-			int startAt = 0;
-			logger.info("Executing JQL = " + jql);
-			logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
-			Promise<SearchResult> searchResultPromise = null;
+	}
 
-			searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
-					.searchJql(jql);
+	private static int updateSubtaskRanking(int updatedSubtasks,
+			String customRankingField1, String customRankingField2,
+			String parentKey) {
+		// 1. Get rank from parent
+		logger.info("Get rank from parentKey=" + parentKey);
+		Issue issue = JIRAGateway.getRestClient().getIssueClient()
+				.getIssue(parentKey).claim();
+		int parentRank = 0;
 
-			SearchResult searchResult = searchResultPromise.claim();
+		if (issue.getField(customRankingField1) != null) {
+			IssueField field = issue.getField(customRankingField1);
+			parentRank = (int) (double) field.getValue(); // TODO: Catch
+			// ClassCastException or
+			// NullPointerException
 
-			Iterable<? extends Issue> subtasks = searchResult.getIssues();
-			for (Issue subtask : subtasks) {
-				logger.info("subtask.key=" + subtask.getKey());
-				// logger.info("getSummary = " + subtask.getSummary());
+		} else if (issue.getField(customRankingField2) != null) {
+			IssueField field = issue.getField(customRankingField2);
+			parentRank = (int) (double) field.getValue(); // TODO: Catch
+			// ClassCastException or
+			// NullPointerException
+		}
+		logger.info("Parent key=" + parentKey + ", parentRank=" + parentRank);
 
-				// 3. Update active subtasks with new rank
-				if (subtask.getField(customRankingField1) != null) {
+		// 2. Get active subtasks
+		String jql = "status not in (Done, Invalid) AND parent = " + parentKey;
+		int maxResults = 1000;
+		int startAt = 0;
+		logger.info("Executing JQL = " + jql);
+		logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
+		Promise<SearchResult> searchResultPromise = null;
+
+		searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
+				.searchJql(jql);
+
+		SearchResult searchResult = searchResultPromise.claim();
+
+		Iterable<? extends Issue> subtasks = searchResult.getIssues();
+		for (Issue subtask : subtasks) {
+			logger.info("subtask.key=" + subtask.getKey());
+			// logger.info("getSummary = " + subtask.getSummary());
+
+			// 3. Update active subtasks with new rank
+			if (subtask.getField(customRankingField1) != null) {
+				updateRank(subtask.getKey(), parentRank, customRankingField1);
+			} else if (subtask.getField(customRankingField2) != null) {
+				IssueField rank = subtask.getField(customRankingField2);
+				int rankValue = 0;
+				if (rank.getValue() != null)
+					rankValue = ((Double) rank.getValue()).intValue();
+				if (rankValue != parentRank) {
 					updateRank(subtask.getKey(), parentRank,
-							customRankingField1);
-				} else if (subtask.getField(customRankingField2) != null) {
-					IssueField rank = subtask.getField(customRankingField2);
-					int rankValue = 0;
-					if(rank.getValue() != null) rankValue = ((Double) rank.getValue()).intValue();
-					if (rankValue != parentRank) {
-						updateRank(subtask.getKey(), parentRank,
-								customRankingField2);
-						updatedSubtasks++;
-					}
+							customRankingField2);
+					updatedSubtasks++;
 				}
 			}
 		}
-		res.setStatusCode(0);
-		res.setReasonPhrase("OK");
-		res.setMessageBody("<p>ManageBacklog.updateSubtaskRanking Completed Successfully. updatedSubtasks: "
-				+ updatedSubtasks);
-
+		return updatedSubtasks;
 	}
 
 	public static OdinResponse zeroRemainingHoursForDoneTasks(OdinResponse res) {
@@ -188,18 +201,20 @@ public class ManageBacklog {
 					+ totalZeroed + "</li></ul>");
 		} else {
 			res.setStatusCode(0);
-			res.setMessageBody("<p>ManageBacklog.zeroRemainingHoursForDoneTasks Completed Successfully.<ul><li>Total issues found: " + totalToZero
+			res.setMessageBody("<p>ManageBacklog.zeroRemainingHoursForDoneTasks Completed Successfully.<ul><li>Total issues found: "
+					+ totalToZero
 					+ "</li><li>Total issues updated to zero remaining: "
 					+ totalZeroed + "</li></ul>");
 		}
 		return res;
 	}
 
-	private static List<String> getParentKeySelection() {
+	private static List<String> getParentKeySelection(String projectCode) {
 		List<String> keys = new ArrayList<String>();
 		String jql = Configuration
 				.getDefaultValue("task.calibration.parent.selection");
 
+		jql = jql.replaceFirst(Pattern.quote("${project}"), projectCode);
 		int maxResults = 1000;
 		int startAt = 0;
 		logger.info("Executing JQL = " + jql);
@@ -279,17 +294,19 @@ public class ManageBacklog {
 				+ clientResponse.getStatus());
 		return 1;
 	}
-	
-	private static void notifyAssigneeOfOldTickets(OdinResponse res){
+
+	private static void notifyAssigneeOfOldTickets(OdinResponse res) {
 		// 1. Find current sprint
-		// 2. Find tickets that are NOT associated to current sprint, "Sprint *", "Product Backlog" or unassigned
-		//                  AND where Status is NOT "invalid" or "Done".
-		//                  FROM projects in scope.
+		// 2. Find tickets that are NOT associated to future sprints, current
+		// sprint, "Sprint *", "Product Backlog" or unassigned
+		// AND where Status is NOT "invalid" or "Done".
+		// FROM projects in scope.
 		// 3. Group tickets by assignee
 		// 4. Get email addresses of assignee, manager and JIRA project owner
-		// 5. Send email notification to assignee, with CC to manager and JIRA project owner.
+		// 5. Send email notification to assignee, with CC to manager and JIRA
+		// project owner.
 		// 6. Insert observation into database
 		// 7. Send notification to ODIN administrators.
-		
+
 	}
 }
