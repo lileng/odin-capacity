@@ -45,18 +45,23 @@ public class ManageBacklog {
 			updateSubtaskRanking(res);
 			zeroRemainingHoursForDoneTasks(res);
 			notifyAssigneeOfOldTickets(res);
+			try {
+				JIRAGateway.getRestClient().close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} 
 
 			String header = "The Job ManageBacklog Completed Normally";
 			if (res.getStatusCode() != 0) {
 				header = "The Job ManageBacklog Completed Abnormally";
 			}
-			try {
+/*			try {
 				SendMail.sendMessage(notificationList, null, header,
 						res.toString());
 			} catch (IOException e) {
 				e.printStackTrace();
 				logger.error("Unable to send email notification", e);
-			}
+			}*/
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -221,10 +226,8 @@ public class ManageBacklog {
 		logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
 		Promise<SearchResult> searchResultPromise = null;
 
-		Set<String> fields = new HashSet<String>();
-		// fields.add("key")
 		searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
-				.searchJql(jql, maxResults, startAt, fields);
+				.searchJql(jql, maxResults, startAt, null);
 
 		SearchResult searchResult = searchResultPromise.claim();
 

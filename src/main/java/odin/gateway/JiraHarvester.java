@@ -105,7 +105,7 @@ public class JiraHarvester {
 		String jql = "fixVersion = \"" + sprint + "\" AND  assignee = "
 				+ assignee + " ORDER BY key ASC";
 		int maxResults = 1000;
-		int startAt = 1;
+		int startAt = 0;
 		logger.info("Executing JQL = " + jql);
 		logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
 		searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
