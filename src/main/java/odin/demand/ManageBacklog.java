@@ -35,7 +35,7 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 
 public class ManageBacklog {
-	protected static Logger logger = Logger.getLogger(ManageBacklog.class);
+	protected static Logger log = Logger.getLogger(ManageBacklog.class);
 	static String baseURL = Configuration.getDefaultValue("gateway.jira.url");
 	static String usr = new String(JEncrypt.decode(Configuration
 			.getDefaultValue("gateway.jira.username").getBytes()));
@@ -48,38 +48,47 @@ public class ManageBacklog {
 	public static void main(String[] args) {
 		OdinResponse res = new OdinResponse();
 		try {
+			log.info("Starting.. Calling updateSubtaskRanking");
 			updateSubtaskRanking(res);
+			log.info("Calling zeroRemainingHoursForDoneTasks");
 			zeroRemainingHoursForDoneTasks(res);
-			notifyAssigneeOfOldTickets(res);
+		//	notifyAssigneeOfOldTickets(res);
 			try {
+				log.info("Closing JIRA client");
 				JIRAGateway.getRestClient().close();
 			} catch (IOException e) {
+				log.error(e);
 				e.printStackTrace();
 			} 
-
-			String header = "The Job ManageBacklog Completed Normally";
-			if (res.getStatusCode() != 0) {
-				header = "The Job ManageBacklog Completed Abnormally";
-			}
-/*			try {
-				SendMail.sendMessage(notificationList, null, header,
-						res.toString());
-			} catch (IOException e) {
-				e.printStackTrace();
-				logger.error("Unable to send email notification", e);
-			}*/
+			log.info("sendJobMessage");
+			sendJobMessage(res);
+			log.info("JobMessage sent. Closing..");
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			logger.error("Unable to complete job", e);
+			log.error("Unable to complete job", e);
 			try {
 				SendMail.sendMessage(notificationList, null,
 						"The Job ManageBacklog Completed Abnormally",
 						e.getMessage());
 			} catch (IOException ee) {
 				e.printStackTrace();
-				logger.error("Unable to send email notification", ee);
+				log.error("Unable to send email notification", ee);
 			}
+		}
+	}
+
+	private static void sendJobMessage(OdinResponse res) {
+		String header = "The Job ManageBacklog Completed Normally";
+		if (res.getStatusCode() != 0) {
+			header = "The Job ManageBacklog Completed Abnormally";
+		}
+		try {
+			SendMail.sendMessage(notificationList, null, header,
+					res.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+			log.error("Unable to send email notification", e);
 		}
 	}
 
@@ -114,7 +123,7 @@ public class ManageBacklog {
 			String customRankingField1, String customRankingField2,
 			String parentKey) {
 		// 1. Get rank from parent
-		logger.info("Get rank from parentKey=" + parentKey);
+		log.info("Get rank from parentKey=" + parentKey);
 		Issue issue = JIRAGateway.getRestClient().getIssueClient()
 				.getIssue(parentKey).claim();
 		int parentRank = 0;
@@ -133,14 +142,14 @@ public class ManageBacklog {
 				parentRank = (int) (double) field.getValue();
 			}	
 		}
-		logger.info("Parent key=" + parentKey + ", parentRank=" + parentRank);
+		log.info("Parent key=" + parentKey + ", parentRank=" + parentRank);
 
 		// 2. Get active subtasks
 		String jql = "status not in (Done, Invalid) AND parent = " + parentKey;
 		int maxResults = 1000;
 		int startAt = 0;
-		logger.info("Executing JQL = " + jql);
-		logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
+		log.info("Executing JQL = " + jql);
+		log.info("maxResults=" + maxResults + ", startAt=" + startAt);
 		Promise<SearchResult> searchResultPromise = null;
 
 		searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
@@ -150,8 +159,8 @@ public class ManageBacklog {
 
 		Iterable<? extends Issue> subtasks = searchResult.getIssues();
 		for (Issue subtask : subtasks) {
-			logger.info("subtask.key=" + subtask.getKey());
-			// logger.info("getSummary = " + subtask.getSummary());
+			log.info("subtask.key=" + subtask.getKey());
+			// log.info("getSummary = " + subtask.getSummary());
 
 			// 3. Update active subtasks with new rank
 			if (subtask.getField(customRankingField1) != null) {
@@ -178,8 +187,8 @@ public class ManageBacklog {
 
 		int maxResults = 1000;
 		int startAt = 0;
-		logger.info("Executing JQL = " + jql);
-		logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
+		log.info("Executing JQL = " + jql);
+		log.info("maxResults=" + maxResults + ", startAt=" + startAt);
 		Promise<SearchResult> searchResultPromise = null;
 
 		searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
@@ -197,7 +206,7 @@ public class ManageBacklog {
 			}
 			String status = issue.getStatus().getName();
 			totalToZero++;
-			logger.info("Issue# " + totalToZero + ": issue.key="
+			log.info("Issue# " + totalToZero + ": issue.key="
 					+ issue.getKey() + ". Status=" + status
 					+ ". Remaining minutes=" + minutes);
 
@@ -232,13 +241,13 @@ public class ManageBacklog {
 			jql = URLEncoder.encode(jql, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
-			logger.error(e);
+			log.error(e);
 		}
 		String url = baseURL + "/rest/api/2/search?jql="
 				+ jql
 				+ "&fields=key&startAt=0&maxResults=1000";
 
-		logger.info("Executing search = " + url);
+		log.info("Executing search = " + url);
 		Client client = Client.create();
 		WebResource webResource = client.resource(url);
 
@@ -252,8 +261,8 @@ public class ManageBacklog {
 				.get(ClientResponse.class);
 
 		// String output = clientResponse.getEntity(String.class);
-		// logger.info("Output from Server .... \n");
-		// logger.info(output);
+		// log.info("Output from Server .... \n");
+		// log.info(output);
 		if (clientResponse.getStatus() != 200) {
 			throw new RuntimeException("Failed : HTTP error code : "
 					+ clientResponse.getStatus());
@@ -289,7 +298,7 @@ public class ManageBacklog {
 		client.addFilter(new HTTPBasicAuthFilter(usr, pw));
 		String jsonRequest = "{\n   \"fields\": { \n    \"" + rankingField
 				+ "\": " + rank + " \n   } \n }";
-		logger.info("Preparing to update url=" + url + ", with JSON="
+		log.info("Preparing to update url=" + url + ", with JSON="
 				+ jsonRequest);
 
 		ClientResponse clientResponse = webResource
@@ -298,8 +307,8 @@ public class ManageBacklog {
 				.put(ClientResponse.class, jsonRequest);
 
 		// String output = clientResponse.getEntity(String.class);
-		// logger.info("Output from Server .... \n");
-		// logger.info(output);
+		// log.info("Output from Server .... \n");
+		// log.info(output);
 		if (clientResponse.getStatus() != 204) {
 			throw new RuntimeException("Failed : HTTP error code : "
 					+ clientResponse.getStatus());
@@ -316,7 +325,7 @@ public class ManageBacklog {
 		// com.sun.jersey.api.client.filter.LoggingFilter());
 		client.addFilter(new HTTPBasicAuthFilter(usr, pw));
 		String jsonRequest = "{\n   \"fields\": { \n    \"timetracking\": {  \"remainingEstimate\": \"0\" } \n   } \n }";
-		logger.info("Preparing to update url=" + url + ", with JSON="
+		log.info("Preparing to update url=" + url + ", with JSON="
 				+ jsonRequest);
 
 		ClientResponse clientResponse = webResource
@@ -325,14 +334,14 @@ public class ManageBacklog {
 				.put(ClientResponse.class, jsonRequest);
 
 		// String output = clientResponse.getEntity(String.class);
-		// logger.info("Output from Server .... \n");
-		// logger.info(output);
+		// log.info("Output from Server .... \n");
+		// log.info(output);
 		if (clientResponse.getStatus() != 204) {
-			logger.warn(key + " failed update: HTTP error code : "
+			log.warn(key + " failed update: HTTP error code : "
 					+ clientResponse.getStatus());
 			return 0;
 		}
-		logger.info(key + " updated successfully: HTTP code : "
+		log.info(key + " updated successfully: HTTP code : "
 				+ clientResponse.getStatus());
 		return 1;
 	}
