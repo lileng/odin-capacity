@@ -1,7 +1,9 @@
 package odin.demand;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -18,6 +20,10 @@ import odin.util.JEncrypt;
 import odin.util.OdinResponse;
 
 import org.apache.log4j.Logger;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.mortbay.log.Log;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueField;
@@ -121,9 +127,11 @@ public class ManageBacklog {
 
 		} else if (issue.getField(customRankingField2) != null) {
 			IssueField field = issue.getField(customRankingField2);
-			parentRank = (int) (double) field.getValue(); // TODO: Catch
-			// ClassCastException or
-			// NullPointerException
+			if(field == null || field.getValue() == null) {
+				parentRank = 9999;
+			} else {
+				parentRank = (int) (double) field.getValue();
+			}	
 		}
 		logger.info("Parent key=" + parentKey + ", parentRank=" + parentRank);
 
@@ -220,23 +228,54 @@ public class ManageBacklog {
 				.getDefaultValue("task.calibration.parent.selection");
 
 		jql = jql.replaceFirst(Pattern.quote("${project}"), projectCode);
-		int maxResults = 1000;
-		int startAt = 0;
-		logger.info("Executing JQL = " + jql);
-		logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
-		Promise<SearchResult> searchResultPromise = null;
-
-		searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
-				.searchJql(jql, maxResults, startAt, null);
-
-		SearchResult searchResult = searchResultPromise.claim();
-
-		Iterable<? extends Issue> tasks = searchResult.getIssues();
-		for (Issue task : tasks) {
-			logger.info("task.key=" + task.getKey());
-			keys.add(task.getKey());
+		try {
+			jql = URLEncoder.encode(jql, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			logger.error(e);
 		}
+		String url = baseURL + "/rest/api/2/search?jql="
+				+ jql
+				+ "&fields=key&startAt=0&maxResults=1000";
+
+		logger.info("Executing search = " + url);
+		Client client = Client.create();
+		WebResource webResource = client.resource(url);
+
+		// client.addFilter(new
+		// com.sun.jersey.api.client.filter.LoggingFilter());
+		client.addFilter(new HTTPBasicAuthFilter(usr, pw));
+
+		ClientResponse clientResponse = webResource
+				.accept(MediaType.APPLICATION_JSON)
+				.header("Content-Type", "application/json")
+				.get(ClientResponse.class);
+
+		// String output = clientResponse.getEntity(String.class);
+		// logger.info("Output from Server .... \n");
+		// logger.info(output);
+		if (clientResponse.getStatus() != 200) {
+			throw new RuntimeException("Failed : HTTP error code : "
+					+ clientResponse.getStatus());
+		}
+		
+		String s = clientResponse.getEntity(String.class);
+		JSONObject json = null;
+		try {
+			json = new JSONObject(s);
+			
+			JSONArray parentList = json.getJSONArray("issues");
+			for (int i = 0; i < parentList.toJSONObject(parentList).length(); i++) {
+				JSONObject parent = parentList.optJSONObject(i);
+				Log.info(parent.toString());
+				keys.add(parent.get("key").toString());
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
 		return keys;
+
 	}
 
 	private static void updateRank(String key, int rank, String rankingField) {
