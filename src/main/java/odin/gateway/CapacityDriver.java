@@ -27,13 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.UriInfo;
-
 import odin.config.Configuration;
 import odin.demand.ManageBacklog;
 import odin.domain.Individual;
@@ -59,44 +52,28 @@ import com.google.gdata.util.ServiceException;
  * 
  *
  */
-@Path("/capacity")
 public class CapacityDriver {
 	protected static Logger logger = Logger.getLogger(CapacityDriver.class);
-	// The @Context annotation allows us to have certain contextual objects
-	// injected into this class.
-	// UriInfo object allows us to get URI information (no kidding).
-	@Context
-	UriInfo uriInfo;
 
-	// Another "injected" object. This allows us to use the information that's
-	// part of any incoming request.
-	// We could, for example, get header information, or the requestor's
-	// address.
-	@Context
-	Request request;
-
-	public static void main(String[] args) throws IOException,
-			InterruptedException, ExecutionException, AuthenticationException,
-			ServiceException, ParseException {
+	public static void main(String[] args) {
 		logger.info("Starting CapacityDriver with arguments: "
 				+ ToStringBuilder.reflectionToString(args));
 		printEnvMap();
 		printClassPath();
-		if (args.length == 0) {
-			ManageBacklog.main(null);
-			process();
-		} else {
-			// Assume processing is to only sync up the capacity spreadsheet.
-			ReadGoogleSpreadsheet.process(args);
-		}
+		try {
+			if (args.length == 0) {
+				ManageBacklog.main(null);
+				process();
+			} else {
+				// Assume processing is to only sync up the capacity
+				// spreadsheet.
+				ReadGoogleSpreadsheet.process(args);
+			}
+		} catch (Exception e) {
+			logger.error(e);
+			e.printStackTrace();			
+		} 
 		logger.info("Stopping CapacityDriver");
-	}
-
-	@GET
-	@Path("ping")
-	@Produces(value = "application/json")
-	public String ping() {
-		return "{'ping': 'pong'}";
 	}
 
 	private static void process() throws IOException, InterruptedException,
@@ -123,7 +100,6 @@ public class CapacityDriver {
 		int hoursRemainingCapacity = Sprint.getRemainingAvailability(sprint,
 				username);
 		int minutesRemainingWork = 0;
-		;
 		int hoursRemainingWork = 0;
 		StringBuffer sb = new StringBuffer();
 
