@@ -52,14 +52,10 @@ public class ManageBacklog {
 			updateSubtaskRanking(res);
 			log.info("Calling zeroRemainingHoursForDoneTasks");
 			zeroRemainingHoursForDoneTasks(res);
-		//	notifyAssigneeOfOldTickets(res);
-			try {
-				log.info("Closing JIRA client");
-				JIRAGateway.getRestClient().close();
-			} catch (IOException e) {
-				log.error(e);
-				e.printStackTrace();
-			} 
+			// notifyAssigneeOfOldTickets(res);
+			log.info("Closing JIRA client");
+			JIRAGateway.closeRestClient();
+
 			log.info("sendJobMessage");
 			sendJobMessage(res);
 			log.info("JobMessage sent. Closing..");
@@ -84,8 +80,7 @@ public class ManageBacklog {
 			header = "The Job ManageBacklog Completed Abnormally";
 		}
 		try {
-			SendMail.sendMessage(notificationList, null, header,
-					res.toString());
+			SendMail.sendMessage(notificationList, null, header, res.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
 			log.error("Unable to send email notification", e);
@@ -113,8 +108,8 @@ public class ManageBacklog {
 			}
 			res.setStatusCode(0);
 			res.setReasonPhrase("OK");
-			res.setMessageBody("<p>ManageBacklog.updateSubtaskRanking Completed Successfully for project "+projectCodes[i] +". UpdatedSubtasks: "
-					+ updatedSubtasks);
+			res.setMessageBody("<p>ManageBacklog.updateSubtaskRanking Completed Successfully for project "
+					+ projectCodes[i] + ". UpdatedSubtasks: " + updatedSubtasks);
 		}
 
 	}
@@ -136,11 +131,11 @@ public class ManageBacklog {
 
 		} else if (issue.getField(customRankingField2) != null) {
 			IssueField field = issue.getField(customRankingField2);
-			if(field == null || field.getValue() == null) {
+			if (field == null || field.getValue() == null) {
 				parentRank = 9999;
 			} else {
 				parentRank = (int) (double) field.getValue();
-			}	
+			}
 		}
 		log.info("Parent key=" + parentKey + ", parentRank=" + parentRank);
 
@@ -206,9 +201,8 @@ public class ManageBacklog {
 			}
 			String status = issue.getStatus().getName();
 			totalToZero++;
-			log.info("Issue# " + totalToZero + ": issue.key="
-					+ issue.getKey() + ". Status=" + status
-					+ ". Remaining minutes=" + minutes);
+			log.info("Issue# " + totalToZero + ": issue.key=" + issue.getKey()
+					+ ". Status=" + status + ". Remaining minutes=" + minutes);
 
 			// 3. Perfom action
 			totalZeroed = totalZeroed + setRemainingToZero(issue.getKey());
@@ -243,8 +237,7 @@ public class ManageBacklog {
 			e.printStackTrace();
 			log.error(e);
 		}
-		String url = baseURL + "/rest/api/2/search?jql="
-				+ jql
+		String url = baseURL + "/rest/api/2/search?jql=" + jql
 				+ "&fields=key&startAt=0&maxResults=1000";
 
 		log.info("Executing search = " + url);
@@ -267,12 +260,12 @@ public class ManageBacklog {
 			throw new RuntimeException("Failed : HTTP error code : "
 					+ clientResponse.getStatus());
 		}
-		
+
 		String s = clientResponse.getEntity(String.class);
 		JSONObject json = null;
 		try {
 			json = new JSONObject(s);
-			
+
 			JSONArray parentList = json.getJSONArray("issues");
 			for (int i = 0; i < parentList.toJSONObject(parentList).length(); i++) {
 				JSONObject parent = parentList.optJSONObject(i);
