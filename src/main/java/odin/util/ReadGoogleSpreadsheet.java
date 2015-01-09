@@ -81,8 +81,10 @@ public class ReadGoogleSpreadsheet {
 			// Iterate over the remaining columns, and print each cell value
 			for (String tag : row.getCustomElements().getTags()) {
 				sb.append(row.getCustomElements().getValue(tag) + "\t");
-				if (tag.equals("username"))
+				if (tag.equals("username")) {
 					username = row.getCustomElements().getValue(tag);
+					if(username == null) break;
+				}
 				if (tag.startsWith("week")) {
 					// Get week number from Google spreadsheet tag
 					String weekNumber = tag.substring(4);
