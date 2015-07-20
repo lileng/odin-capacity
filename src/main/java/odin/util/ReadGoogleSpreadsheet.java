@@ -48,7 +48,7 @@ public class ReadGoogleSpreadsheet {
 			MalformedURLException, IOException, ServiceException,
 			URISyntaxException, ParseException, GeneralSecurityException {
 
-		logger.info("Getting worksheet: Sprint 2015.07");
+		logger.info("Getting worksheet from input parameter: " + StringUtils.join(args, ' '));
 		URL SPREADSHEET_FEED_URL = new URL(
 				"https://spreadsheets.google.com/feeds/spreadsheets/private/full");
 
