@@ -17,100 +17,66 @@
  */
 package odin.gateway;
 
-import java.io.IOException;
-import java.util.Properties;
-
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
-
 import odin.config.Configuration;
 
 import org.apache.log4j.Logger;
 
-public class SendMail {
-	protected static Logger logger = Logger.getLogger(SendMail.class);
+import com.sendgrid.SendGrid;
 
-	public static void main(String[] args) throws IOException {
-		String cctest[] = {"mlileng@merkleinc.com"};
+public class SendMail {
+	protected static Logger LOG = Logger.getLogger(SendMail.class);
+
+	public static void main(String[] args) throws Exception {
+		String cctest[] = { "test@example.com" };
+		String name = "Bob";
+		String hoursRemainingCapacity = "10";
+		String hoursRemainingWork = "80";
+		StringBuffer sb = new StringBuffer();
+		sb.append("<li>[JIRA-123] - An example task</li>");
+		sb.append("<li>[JIRA-124] - Second example task with much much more text in it which can potentiall cros lines</li>");
+		sb.append("<li>[JIRA-125] - A third example task</li>");
 		sendMessage(
-				"mol@lileng.com", 
+				"odin@lileng.com",
 				cctest,
-				"test subject",
-				"<img src=\"http://capacity-odin.rhcloud.com/images/agile-odin.jpg\" alt=\"odin\" width=\"800\" height=\"75\" />");
+				"Odin Capacity Status - You are underallocated",
+				"<h1>You are Underallocated</h1>" + "<p>Hi "
+						+ name
+						+ ". It looks like you may have hours available, and not enough tasks on your plate."
+						+ "<ul>"
+						+ "<li>Your estimated remaining capacity in hours: "
+						+ hoursRemainingCapacity
+						+ "<li>Hours for your estimated tasks: "
+						+ hoursRemainingWork
+						+ "</ul>"
+						+ "<p>How do you resolve this? <ul>"
+						+ "<li>Make sure your estimates for remaining tasks assigned to you are as accurate as they can."
+						+ "<li>Let your team leader know that you need more work. In general, she/he will look at the other "
+						+ "members. You may get tasks from overallocated resources. The next possibility is to bring more tasks from the product "
+						+ "backlog into the current sprint."
+						+ "<li>Note that all tickets in the sprint and product backlog should have a numeric ranking. "
+						+ "Tickets with lower ranking number has higher priority."
+						+ "</ul>"
+						+ "<p>The tasks with hours still remaining are the following:"
+						+ "<ul>" + sb.toString() + "</ul>"
+						+ "<p>Thank you,<br>"
+						+ "--agile odin (odin@lileng.com)");
 	}
 
 	public static void sendMessage(String toEmailAddress,
 			String ccEmailAddress[], String subject, String content)
-			throws IOException {
-		String emailOverride = Configuration
-				.getDefaultValue("gateway.email.override");
-		if (emailOverride != null) {
-			logger.warn("gateway.email.override set. Overriding the email address found "
-					+ emailOverride);
-			toEmailAddress = emailOverride;
-		}
-		final String username = Configuration
-				.getDefaultValue("gateway.sendmail.username");
-		final String password = Configuration
-				.getDefaultValue("gateway.sendmail.password");
-		logger.info("Attempting to send email message to " + toEmailAddress);
+			throws Exception {
+		LOG.info("Sending email notification to: " + toEmailAddress);
+		SendGrid sendgrid = new SendGrid(Configuration.getDefaultValue("sendgrid.api_key"));
+		SendGrid.Email email = new SendGrid.Email();
+		email.addTo(toEmailAddress);
+		email.addCc(ccEmailAddress);
+		email.setFrom("odin@lileng.com");
+		email.setSubject(subject);
+		email.setHtml(content);
+		email.setTemplateId("sendgrid.template_id");
 
-		// Sender's email ID needs to be mentioned
-		String from = "odin@lileng.com";
+		SendGrid.Response response = sendgrid.send(email);
+		LOG.info("Email sent. Response: " + response.getMessage());
 
-		// Assuming you are sending email from localhost
-		String host = Configuration
-				.getDefaultValue("mail.smtp.host");
-
-		// Get system properties
-		Properties props = System.getProperties();
-
-		// Setup mail server
-		props.setProperty("mail.smtp.host", host);
-//		props.put("mail.smtp.auth", "true");
-//		props.put("mail.smtp.starttls.enable", "true");
-//		props.put("mail.smtp.host", "smtp.gmail.com");
-//		props.put("mail.smtp.port", "587");
-
-		// Get the default Session object.
-		Session session = Session.getInstance(props,
-				new javax.mail.Authenticator() {
-					protected PasswordAuthentication getPasswordAuthentication() {
-						return new PasswordAuthentication(username, password);
-					}
-				});
-
-		try {
-			// Create a default MimeMessage object.
-			MimeMessage message = new MimeMessage(session);
-			// Set From: header field of the header.
-			message.setFrom(new InternetAddress(from));
-
-			// Set To: header field of the header.
-			message.addRecipient(Message.RecipientType.TO, new InternetAddress(
-					toEmailAddress));
-			for (int i = 0; i < ccEmailAddress.length; i++) {
-				message.addRecipient(Message.RecipientType.CC,
-						new InternetAddress(ccEmailAddress[i]));
-			}
-
-			// Set Subject: header field
-			message.setSubject(subject);
-
-			// Send the actual HTML message, as big as you like
-			message.setContent(content, "text/html");
-
-			// Send message
-			Transport.send(message);
-			logger.info("Sent message successfully to " + toEmailAddress);
-		} catch (MessagingException mex) {
-			mex.printStackTrace();
-			logger.error(mex);
-		}
 	}
 }

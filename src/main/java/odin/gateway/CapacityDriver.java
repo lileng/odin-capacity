@@ -189,8 +189,8 @@ public class CapacityDriver {
 		SendMail.sendMessage(
 				emailAddress,
 				cc,
-				"Odin Capacity Status - You are Underallocated",
-				"<h1>You are Underallocated</h1>" + "<p>Hi "
+				"Capacity Status - " + name + ", you are underallocated",
+				"<h1>"+name + ", you are underallocated</h1>" + "<p>Hi "
 						+ name
 						+ ". It looks like you may have hours available, and not enough tasks on your plate."
 						+ "<ul>"
@@ -221,9 +221,8 @@ public class CapacityDriver {
 		SendMail.sendMessage(
 				emailAddress,
 				cc,
-				"Odin Capacity Status - You are overallocated",
-				"<h1>You are Overallocated</h1>"
-						+ "<p>Hi "
+				"Capacity Status - " + name + ", you are overallocated",
+				"<h1>"+name + ", you are overallocated</h1>" + "<p>Hi "
 						+ name
 						+ ". It looks like you may have more tasks than available hours left in the current sprint. "
 						+ "<ul>"
