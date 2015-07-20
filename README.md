@@ -4,7 +4,7 @@ The OpenShift `jbossews` cartridge documentation can be found at:
 http://openshift.github.io/documentation/oo_cartridge_guide.html#tomcat
 =======
 NAME
-    Agile
+    Odin Capacity
 
 SYNOPSIS
     TBD
@@ -15,7 +15,8 @@ DESCRIPTION
 STATUS
 
  EXAMPLES
- 
+    To read capacity in an existing spreadsheet, execute the following: ReadGoogleSpreadsheet Sprint 2015.07
+    Note that the spreadsheet needs to follow strictly a certain convention. If not, the read will not work.
  
  DEPLOYMENT
     TBD

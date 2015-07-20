@@ -4,7 +4,7 @@
 	<groupId>jbossews</groupId>
 	<artifactId>jbossews</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0</version> 
+	<version>1.0</version>
 	<name>jbossews</name>
 	<repositories>
 
@@ -114,6 +114,19 @@
 			<version>1.47.1</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.google.http-client</groupId>
+			<artifactId>google-http-client-jackson2</artifactId>
+			<version>1.20.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.apis</groupId>
+			<artifactId>google-api-services-drive</artifactId>
+			<version>v2-rev177-1.20.0</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>
@@ -138,21 +151,10 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>2.9</version>
-				<executions>
-					<execution>
-						<id>copy-dependencies</id>
-						<phase>package</phase>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${project.build.directory}/lib</outputDirectory>
-							<overWriteReleases>false</overWriteReleases>
-							<overWriteSnapshots>false</overWriteSnapshots>
-							<overWriteIfNewer>true</overWriteIfNewer>
-						</configuration>
-					</execution>
-				</executions>
+				<!-- <executions> <execution> <id>copy-dependencies</id> <phase>package</phase> 
+					<goals> <goal>copy-dependencies</goal> </goals> <configuration> <outputDirectory>${project.build.directory}/lib</outputDirectory> 
+					<overWriteReleases>false</overWriteReleases> <overWriteSnapshots>false</overWriteSnapshots> 
+					<overWriteIfNewer>true</overWriteIfNewer> </configuration> </execution> </executions> -->
 			</plugin>
 		</plugins>
 	</build>
