@@ -21,21 +21,19 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 
-import odin.config.Configuration;
 import odin.domain.Availability;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.google.gdata.client.spreadsheet.SpreadsheetService;
 import com.google.gdata.data.spreadsheet.ListEntry;
 import com.google.gdata.data.spreadsheet.ListFeed;
-import com.google.gdata.data.spreadsheet.SpreadsheetEntry;
 import com.google.gdata.data.spreadsheet.SpreadsheetFeed;
 import com.google.gdata.data.spreadsheet.WorksheetEntry;
 import com.google.gdata.data.spreadsheet.WorksheetFeed;
@@ -43,25 +41,28 @@ import com.google.gdata.util.AuthenticationException;
 import com.google.gdata.util.ServiceException;
 
 public class ReadGoogleSpreadsheet {
-	// Define the URL to request. This should never change.
-	private static URL SPREADSHEET_FEED_URL = null;
-	private static SpreadsheetService service;
 	protected static Logger logger = Logger
 			.getLogger(ReadGoogleSpreadsheet.class);
 
 	public static void main(String[] args) throws AuthenticationException,
 			MalformedURLException, IOException, ServiceException,
-			URISyntaxException, ParseException {
-		SPREADSHEET_FEED_URL = new URL(
+			URISyntaxException, ParseException, GeneralSecurityException {
+
+		logger.info("Getting worksheet: Sprint 2015.07");
+		URL SPREADSHEET_FEED_URL = new URL(
 				"https://spreadsheets.google.com/feeds/spreadsheets/private/full");
 
-		logger.info("Getting worksheet: " + StringUtils.join(args, ' '));
+		ListFeed listFeedSpreadsheet = GoogleOAuthIntegration
+				.getSpreadsheetService().getFeed(SPREADSHEET_FEED_URL,
+						ListFeed.class);
+
 		WorksheetEntry worksheet = getWorkSheet(StringUtils.join(args, ' '));
 		logger.info("Worksheet title: " + worksheet.getTitle().getPlainText());
 
 		// Fetch the list feed of the worksheet.
 		URL listFeedUrl = worksheet.getListFeedUrl();
-		ListFeed listFeed = getService().getFeed(listFeedUrl, ListFeed.class);
+		ListFeed listFeed = GoogleOAuthIntegration.getSpreadsheetService().getFeed(listFeedUrl, ListFeed.class);
+
 		StringBuffer sb = new StringBuffer();
 		// Iterate through each row, printing its cell values.
 		for (ListEntry row : listFeed.getEntries()) {
@@ -104,12 +105,14 @@ public class ReadGoogleSpreadsheet {
 	}
 
 	static WorksheetEntry getWorkSheet(String sheetName) throws IOException,
-			ServiceException {
+			ServiceException, GeneralSecurityException {
 
 		// Make a request to the API and get all spreadsheets.
-		SpreadsheetFeed feed = getService().getFeed(SPREADSHEET_FEED_URL,
+		URL SPREADSHEET_FEED_URL = new URL(
+				"https://spreadsheets.google.com/feeds/spreadsheets/private/full");
+		SpreadsheetFeed feed = GoogleOAuthIntegration.getSpreadsheetService().getFeed(SPREADSHEET_FEED_URL,
 				SpreadsheetFeed.class);
-		List<SpreadsheetEntry> spreadsheets = feed.getEntries();
+		List<com.google.gdata.data.spreadsheet.SpreadsheetEntry> spreadsheets = feed.getEntries();
 
 		if (spreadsheets.size() == 0) {
 			// TODO: There were no spreadsheets, act accordingly.
@@ -117,7 +120,7 @@ public class ReadGoogleSpreadsheet {
 
 		// TODO: Choose a spreadsheet more intelligently based on your
 		// app's needs.
-		SpreadsheetEntry spreadsheet = spreadsheets.get(0);
+		com.google.gdata.data.spreadsheet.SpreadsheetEntry spreadsheet = spreadsheets.get(0);
 		logger.info(spreadsheet.getTitle().getPlainText());
 
 		// Make a request to the API to fetch information about all
@@ -142,7 +145,7 @@ public class ReadGoogleSpreadsheet {
 		// Get the first worksheet of the first spreadsheet.
 		// TODO: Choose a worksheet more intelligently based on your
 		// app's needs.
-		WorksheetFeed worksheetFeed = service.getFeed(
+		WorksheetFeed worksheetFeed = GoogleOAuthIntegration.getSpreadsheetService().getFeed(
 				spreadsheet.getWorksheetFeedUrl(), WorksheetFeed.class);
 
 		WorksheetEntry worksheet = worksheets.get(0);
@@ -159,16 +162,4 @@ public class ReadGoogleSpreadsheet {
 		return worksheet;
 	}
 
-	private static SpreadsheetService getService()
-			throws AuthenticationException {
-		if (service == null) {
-			String username = Configuration
-					.getDefaultValue("gateway.googledoc.username");
-			String password = Configuration
-					.getDefaultValue("gateway.googledoc.password");
-			service = new SpreadsheetService("mol-01");
-			service.setUserCredentials(username, password);
-		}
-		return service;
-	}
 }
