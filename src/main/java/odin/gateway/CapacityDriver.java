@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package odin.gateway; 
+package odin.gateway;
 
 import java.io.IOException;
 import java.net.URL;
@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.AddressException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -68,8 +70,7 @@ public class CapacityDriver {
 	@Context
 	Request request;
 
-	public static void main(String[] args) throws IOException,
-			InterruptedException, ExecutionException {
+	public static void main(String[] args) throws Exception {
 		logger.info("Starting CapacityDriver");
 		printEnvMap();
 		printClassPath();
@@ -84,8 +85,7 @@ public class CapacityDriver {
 		return "{'ping': 'pong'}";
 	}
 
-	private static void process() throws IOException, InterruptedException,
-			ExecutionException {
+	private static void process() throws Exception {
 		logger.info("process");
 		List<Sprint> activeSprints = Sprint.getActiveSprints();
 		List<Individual> activeIndividuals = null;
@@ -103,8 +103,7 @@ public class CapacityDriver {
 	}
 
 	public static void processIndividual(String username, String sprint,
-			String emailAddress, String name) throws IOException,
-			InterruptedException, ExecutionException {
+			String emailAddress, String name) throws Exception {
 		int hoursRemainingCapacity = Sprint.getRemainingAvailability(sprint,
 				username);
 		int minutesRemainingWork = 0;
@@ -147,27 +146,32 @@ public class CapacityDriver {
 			// Send mail
 			logger.info("Overallocation: HoursRemainingCapacity < hoursRemainingWork for "
 					+ username + ". Sending email to notify...");
-			Observation.recordObservation(username, "Overallocation",
-					"Overallocation: HoursRemainingCapacity < hoursRemainingWork for "
-							+ username, "hoursRemainingCapacity",
-					hoursRemainingCapacity, "hoursRemainingWork",
-					hoursRemainingWork);
-			sendOverallocatedMail(emailAddress, name, hoursRemainingCapacity,
-					hoursRemainingWork, sb);
-			Individual.recordUserContactedNow(username);
+			if (true) {
+				Observation.recordObservation(username, "Overallocation",
+						"Overallocation: HoursRemainingCapacity < hoursRemainingWork for "
+								+ username, "hoursRemainingCapacity",
+						hoursRemainingCapacity, "hoursRemainingWork",
+						hoursRemainingWork);
+
+				sendOverallocatedMail(emailAddress, name,
+						hoursRemainingCapacity, hoursRemainingWork, sb);
+				Individual.recordUserContactedNow(username);
+			}
 
 		} else if (delta > Integer.parseInt(underAllocationThreshold)) {
 			// Send mail
 			logger.info("Underallocation: HoursRemainingCapacity > hoursRemainingWork for "
 					+ username + ". Sending email to notify...");
-			Observation.recordObservation(username, "Underallocation",
-					"Underallocation: HoursRemainingCapacity > hoursRemainingWork for "
-							+ username, "hoursRemainingCapacity",
-					hoursRemainingCapacity, "hoursRemainingWork",
-					hoursRemainingWork);
-			sendUnderallocatedMail(emailAddress, name, hoursRemainingCapacity,
-					hoursRemainingWork, sb);
-			Individual.recordUserContactedNow(username);
+			if (true) {
+				Observation.recordObservation(username, "Underallocation",
+						"Underallocation: HoursRemainingCapacity > hoursRemainingWork for "
+								+ username, "hoursRemainingCapacity",
+						hoursRemainingCapacity, "hoursRemainingWork",
+						hoursRemainingWork);
+				sendUnderallocatedMail(emailAddress, name,
+						hoursRemainingCapacity, hoursRemainingWork, sb);
+				Individual.recordUserContactedNow(username);
+			}
 
 		} else {
 			Observation.recordObservation(username, "Allocation ok", "n/a",
@@ -179,14 +183,14 @@ public class CapacityDriver {
 
 	private static void sendUnderallocatedMail(String emailAddress,
 			String name, int hoursRemainingCapacity, int hoursRemainingWork,
-			StringBuffer sb) throws IOException {
+			StringBuffer sb) throws Exception {
 		String[] cc = Configuration.getDefaultValue("gateway.sendmail.cc")
 				.split(" ");
 		SendMail.sendMessage(
 				emailAddress,
 				cc,
-				"Odin Capacity Status - You are underallocated",
-				"<h1>Odin Underallocation Status</h1>" + "<p>Hi "
+				"Odin Capacity Status - You are Underallocated",
+				"<h1>You are Underallocated</h1>" + "<p>Hi "
 						+ name
 						+ ". It looks like you may have hours available, and not enough tasks on your plate."
 						+ "<ul>"
@@ -211,14 +215,14 @@ public class CapacityDriver {
 
 	private static void sendOverallocatedMail(String emailAddress, String name,
 			int hoursRemainingCapacity, int hoursRemainingWork, StringBuffer sb)
-			throws IOException {
+			throws Exception {
 		String[] cc = Configuration.getDefaultValue("gateway.sendmail.cc")
 				.split(" ");
 		SendMail.sendMessage(
 				emailAddress,
 				cc,
 				"Odin Capacity Status - You are overallocated",
-				"<h1>Odin Overallocation Status</h1>"
+				"<h1>You are Overallocated</h1>"
 						+ "<p>Hi "
 						+ name
 						+ ". It looks like you may have more tasks than available hours left in the current sprint. "
