@@ -19,6 +19,8 @@ package odin.gateway;
 
 import odin.config.Configuration;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
 
 import com.sendgrid.SendGrid;
@@ -35,7 +37,7 @@ public class SendMail {
 		sb.append("<li>[JIRA-123] - An example task</li>");
 		sb.append("<li>[JIRA-124] - Second example task with much much more text in it which can potentiall cros lines</li>");
 		sb.append("<li>[JIRA-125] - A third example task</li>");
-		sendMessage(
+		sendCapacityMessage(
 				"odin@lileng.com",
 				cctest,
 				"Odin Capacity Status - You are underallocated",
@@ -57,12 +59,10 @@ public class SendMail {
 						+ "Tickets with lower ranking number has higher priority."
 						+ "</ul>"
 						+ "<p>The tasks with hours still remaining are the following:"
-						+ "<ul>" + sb.toString() + "</ul>"
-						+ "<p>Thank you,<br>"
-						+ "--agile odin (odin@lileng.com)");
+						+ "<ul>" + sb.toString() + "</ul>");
 	}
 
-	public static void sendMessage(String toEmailAddress,
+	public static void sendCapacityMessage(String toEmailAddress,
 			String ccEmailAddress[], String subject, String content)
 			throws Exception {
 		LOG.info("Sending email notification to: " + toEmailAddress);
@@ -73,7 +73,26 @@ public class SendMail {
 		email.setFrom("odin@lileng.com");
 		email.setSubject(subject);
 		email.setHtml(content);
-		email.setTemplateId("sendgrid.template_id");
+		email.setTemplateId(Configuration.getDefaultValue("sendgrid.capacity.template_id"));
+
+		SendGrid.Response response = sendgrid.send(email);
+		LOG.info("Email sent. Response: " + response.getMessage());
+
+	}
+	
+	public static void sendBacklogManagementMessage(String[] notificationList,
+			String ccEmailAddress[], String subject, String content)
+			throws Exception {
+		LOG.info("Sending email notification to: " + ToStringBuilder.reflectionToString(notificationList));
+		SendGrid sendgrid = new SendGrid(Configuration.getDefaultValue("sendgrid.api_key"));
+		SendGrid.Email email = new SendGrid.Email();
+		email.addTo(notificationList);
+		if(ccEmailAddress != null)
+			email.addCc(ccEmailAddress);
+		email.setFrom("odin@lileng.com");
+		email.setSubject(subject);
+		email.setHtml(content);
+		email.setTemplateId(Configuration.getDefaultValue("sendgrid.backlog_mgmt.template_id"));
 
 		SendGrid.Response response = sendgrid.send(email);
 		LOG.info("Email sent. Response: " + response.getMessage());
