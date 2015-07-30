@@ -28,7 +28,7 @@ public class RestInitializer extends Application {
 	@Override
 	public Set<Class<?>> getClasses() {
 		Set<Class<?>> s = new HashSet();
-		s.add(CapacityDriver.class);
+		s.add(ReportAllocation.class);
 		return s;
 	}
 
