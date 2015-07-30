@@ -27,7 +27,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 
+import odin.config.Configuration;
 import odin.domain.Availability;
+import odin.gateway.SendMail;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -43,12 +45,16 @@ import com.google.gdata.util.ServiceException;
 public class ReadGoogleSpreadsheet {
 	protected static Logger logger = Logger
 			.getLogger(ReadGoogleSpreadsheet.class);
+	static String[] notificationList = Configuration.getDefaultValue(
+			"odin.notify.prod.to").split(" ");
 
-	public static void main(String[] args) throws AuthenticationException,
-			MalformedURLException, IOException, ServiceException,
-			URISyntaxException, ParseException, GeneralSecurityException {
+	public static void main(String[] args) throws Exception {
 
 		logger.info("Getting worksheet from input parameter: " + StringUtils.join(args, ' '));
+
+		StringBuffer returnBody = new StringBuffer();
+		returnBody.append("<p>"+ReadGoogleSpreadsheet.class.getName() + " Completed");
+		
 		URL SPREADSHEET_FEED_URL = new URL(
 				"https://spreadsheets.google.com/feeds/spreadsheets/private/full");
 
@@ -58,20 +64,20 @@ public class ReadGoogleSpreadsheet {
 
 		WorksheetEntry worksheet = getWorkSheet(StringUtils.join(args, ' '));
 		logger.info("Worksheet title: " + worksheet.getTitle().getPlainText());
+		returnBody.append("<ul><li>Worksheet title: " + worksheet.getTitle().getPlainText() + "</li></ul>");
 
 		// Fetch the list feed of the worksheet.
 		URL listFeedUrl = worksheet.getListFeedUrl();
 		ListFeed listFeed = GoogleOAuthIntegration.getSpreadsheetService().getFeed(listFeedUrl, ListFeed.class);
 
-		StringBuffer sb = new StringBuffer();
+	//	StringBuffer sb = new StringBuffer();
 		// Iterate through each row, printing its cell values.
 		for (ListEntry row : listFeed.getEntries()) {
 			String username = null;
 			// Print the first column's cell value
-			sb.append(row.getTitle().getPlainText() + "\t");
 			// Iterate over the remaining columns, and print each cell value
 			for (String tag : row.getCustomElements().getTags()) {
-				sb.append(row.getCustomElements().getValue(tag) + "\t");
+				logger.info("CustomElement tag value: " + row.getCustomElements().getValue(tag));
 				if (tag.equals("username"))
 					username = row.getCustomElements().getValue(tag);
 				if (tag.startsWith("week")) {
@@ -96,12 +102,13 @@ public class ReadGoogleSpreadsheet {
 					// Update availability in local database
 					Availability.setAvailability(wkEndDtS, username, hours);
 				}
-
 			}
-			logger.info(sb.toString());
-
 		}
-
+		OdinResponse res = new OdinResponse();
+		res.setStatusCode(0);
+		res.setReasonPhrase("OK");
+		res.setMessageBody(returnBody.toString());
+		sendJobMessage(res);
 	}
 
 	static WorksheetEntry getWorkSheet(String sheetName) throws IOException,
@@ -160,6 +167,20 @@ public class ReadGoogleSpreadsheet {
 				+ " cols: " + colCount);
 
 		return worksheet;
+	}
+	
+	private static void sendJobMessage(OdinResponse res) throws Exception {
+		String header = "The Job " + ReadGoogleSpreadsheet.class.getName() + " Completed Normally";
+		if (res.getStatusCode() != 0) {
+			header = "The Job "+ ReadGoogleSpreadsheet.class.getName() + " Completed Abnormally";
+		}
+		try {
+			SendMail.sendBacklogManagementMessage(notificationList, null,
+					header, res.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+			logger.error("Unable to send email notification", e);
+		}
 	}
 
 }
