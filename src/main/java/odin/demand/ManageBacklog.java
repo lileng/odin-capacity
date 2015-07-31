@@ -342,6 +342,36 @@ public class ManageBacklog {
 				+ clientResponse.getStatus());
 		return 1;
 	}
+	
+	
+	static int updateStatus(String key) {
+		String url = baseURL + "/rest/api/2/issue/" + key + "/transitions";
+		
+		Client client = Client.create();
+		WebResource webResource = client.resource(url);
+
+		
+		client.addFilter(new HTTPBasicAuthFilter(usr, pw));
+		String jsonRequest = "{\n   \"update\": { \n    "
+				+ "\"comment\": [ { \"add\": { \"body\": \"Issue in backlog should be in status=New. Updating to reflect.\"}}]},"
+				+ "\"transition\": { \"id\": \"41\"  } \n  }"; // some have 61 as id
+		log.info("Preparing to update url=" + url + ", with JSON="
+				+ jsonRequest);
+
+		ClientResponse clientResponse = webResource
+				.accept(MediaType.APPLICATION_JSON)
+				.header("Content-Type", "application/json")
+				.post(ClientResponse.class, jsonRequest);
+
+		if (clientResponse.getStatus() != 204) {
+			log.warn(key + " failed update: HTTP error code : "
+					+ clientResponse.getStatus());
+			return 0;
+		}
+		log.info(key + " updated successfully: HTTP code : "
+				+ clientResponse.getStatus());
+		return 1;
+	}
 
 	private static void notifyAssigneeOfOldTickets(OdinResponse res) {
 		// 1. Find current sprint
@@ -357,4 +387,30 @@ public class ManageBacklog {
 		// 7. Send notification to ODIN administrators.
 
 	}
+	
+	public static OdinResponse ensureTasksInProductBacklogNewStatus(OdinResponse res) {
+		String jql = Configuration.getDefaultValue("task.calibration.jql.product_backlog");
+
+		int maxResults = 1000;
+		int startAt = 0;
+		log.info("Executing JQL = " + jql);
+		log.info("maxResults=" + maxResults + ", startAt=" + startAt);
+		Promise<SearchResult> searchResultPromise = null;
+
+		searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
+				.searchJql(jql, maxResults, startAt, null);
+
+		SearchResult searchResult = searchResultPromise.claim();
+
+		Iterable<? extends Issue> issues = searchResult.getIssues();
+		for (Issue issue : issues) {
+			String status = issue.getStatus().getName();
+			if (status.equalsIgnoreCase("In Progress")) {
+				log.info("The following task will be updated in Product Backlog: issue.key=" + issue.getKey() + ". Status=" + status);
+				updateStatus(issue.getKey());
+			}
+		}
+		return res;
+	}
+
 }
