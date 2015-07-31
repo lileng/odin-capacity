@@ -39,6 +39,7 @@ import odin.config.Configuration;
 import odin.domain.Individual;
 import odin.domain.Observation;
 import odin.domain.Sprint;
+import odin.util.OdinResponse;
 
 import org.apache.log4j.Logger;
 
@@ -68,13 +69,31 @@ public class ReportAllocation {
 	// address.
 	@Context
 	Request request;
+	static String[] notificationList = Configuration.getDefaultValue(
+			"odin.notify.prod.to").split(" ");
 
 	public static void main(String[] args) throws Exception {
 		logger.info("Starting ReportAllocation");
 		printEnvMap();
 		printClassPath();
-		process();
+		OdinResponse res = new OdinResponse();
+		process(res);
+		sendJobMessage(res);
 		logger.info("Stopping ReportAllocation");
+	}
+	
+	private static void sendJobMessage(OdinResponse res) throws Exception {
+		String header = "The Job ReportAllocation Completed Normally";
+		if (res.getStatusCode() != 0) {
+			header = "The Job ReportAllocation Completed Abnormally";
+		}
+		try {
+			SendMail.sendBacklogManagementMessage(notificationList, null,
+					header, res.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+			logger.error("Unable to send email notification", e);
+		}
 	}
 
 	@GET
@@ -84,8 +103,10 @@ public class ReportAllocation {
 		return "{'ping': 'pong'}";
 	}
 
-	private static void process() throws Exception {
+	private static void process(OdinResponse res)  {
 		logger.info("process");
+		StringBuffer msg = new StringBuffer();
+		msg.append("<p>ReportAllocation Completed.");
 		List<Sprint> activeSprints = Sprint.getActiveSprints();
 		List<Individual> activeIndividuals = null;
 
@@ -93,11 +114,25 @@ public class ReportAllocation {
 			activeIndividuals = Sprint
 					.getActiveParticipantsNotContactedToday(sprint
 							.getSprintName());
+			msg.append(" Processed the following individuals for sprint: " + sprint.getSprintName() + "<ul>");
 			for (Individual i : activeIndividuals) {
-				processIndividual(i.getUserID(), sprint.getSprintName(),
-						i.getEmailAddress(), i.getFirstName());
+				try {
+					processIndividual(i.getUserID(), sprint.getSprintName(),
+							i.getEmailAddress(), i.getFirstName());
+				} catch (Exception e) {
+					msg.append("<li>GOT ERROR WHEN ATTEMPTING TO PROCESS THE FOLLOWING RECORD: " + i.getFirstName() + " " + i.getLastName() + ", user=" + i.getUserID()+ ", email=" + i.getEmailAddress());
+					msg.append("<br>----->   " + e.getStackTrace() + "</li>");
+					res.setStatusCode(-1);
+					res.setReasonPhrase(e.getMessage());
+					logger.error("failed", e);
+				}
+				msg.append("<li>" + i.getFirstName() + " " + i.getLastName() + ", user=" + i.getUserID()+ ", email=" + i.getEmailAddress()+"</li>");
 			}
+			msg.append("</ul>");
 		}
+		res.setStatusCode(0);
+		res.setReasonPhrase("OK");
+		res.setMessageBody(msg.toString());
 
 	}
 
