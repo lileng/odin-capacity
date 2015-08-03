@@ -20,6 +20,8 @@ package odin.gateway;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -118,7 +120,7 @@ public class ReportAllocation {
 			for (Individual i : activeIndividuals) {
 				try {
 					processIndividual(i.getUserID(), sprint.getSprintName(),
-							i.getEmailAddress(), i.getFirstName());
+							i.getEmailAddress(), i.getFirstName(), i.getManagerEmailAddress());
 				} catch (Exception e) {
 					msg.append("<li>GOT ERROR WHEN ATTEMPTING TO PROCESS THE FOLLOWING RECORD: " + i.getFirstName() + " " + i.getLastName() + ", user=" + i.getUserID()+ ", email=" + i.getEmailAddress());
 					msg.append("<br>----->   " + e.getStackTrace() + "</li>");
@@ -137,7 +139,7 @@ public class ReportAllocation {
 	}
 
 	public static void processIndividual(String username, String sprint,
-			String emailAddress, String name) throws Exception {
+			String emailAddress, String name, String mgrEmail) throws Exception {
 		int hoursRemainingCapacity = Sprint.getRemainingAvailability(sprint,
 				username);
 		int minutesRemainingWork = 0;
@@ -188,7 +190,7 @@ public class ReportAllocation {
 						hoursRemainingWork);
 
 				sendOverallocatedMail(sprint, emailAddress, name,
-						hoursRemainingCapacity, hoursRemainingWork, sb);
+						hoursRemainingCapacity, hoursRemainingWork, sb, mgrEmail);
 				Individual.recordUserContactedNow(username);
 			}
 
@@ -203,7 +205,7 @@ public class ReportAllocation {
 						hoursRemainingCapacity, "hoursRemainingWork",
 						hoursRemainingWork);
 				sendUnderallocatedMail(sprint, emailAddress, name,
-						hoursRemainingCapacity, hoursRemainingWork, sb);
+						hoursRemainingCapacity, hoursRemainingWork, sb, mgrEmail);
 				Individual.recordUserContactedNow(username);
 			}
 
@@ -217,12 +219,15 @@ public class ReportAllocation {
 
 	private static void sendUnderallocatedMail(String sprintName, String emailAddress,
 			String name, int hoursRemainingCapacity, int hoursRemainingWork,
-			StringBuffer sb) throws Exception {
+			StringBuffer sb, String mgrEmail) throws Exception {
+		
 		String[] cc = Configuration.getDefaultValue("gateway.sendmail.cc")
 				.split(" ");
+		ArrayList<String> ar = new ArrayList(Arrays.asList(cc));
+		ar.add(mgrEmail);
 		SendMail.sendCapacityMessage(
 				emailAddress,
-				cc,
+				ar.toArray(new String[ar.size()]),
 				sprintName + " Capacity Status - " + name + ", you are underallocated",
 				"<h1>"+name + ", you are underallocated</h1>" + "<p>Hi "
 						+ name
@@ -247,13 +252,15 @@ public class ReportAllocation {
 	}
 
 	private static void sendOverallocatedMail(String sprintName, String emailAddress, String name,
-			int hoursRemainingCapacity, int hoursRemainingWork, StringBuffer sb)
+			int hoursRemainingCapacity, int hoursRemainingWork, StringBuffer sb, String mgrEmail)
 			throws Exception {
 		String[] cc = Configuration.getDefaultValue("gateway.sendmail.cc")
 				.split(" ");
+		ArrayList<String> ar = new ArrayList(Arrays.asList(cc));
+		ar.add(mgrEmail);
 		SendMail.sendCapacityMessage(
 				emailAddress,
-				cc,
+				ar.toArray(new String[ar.size()]),
 				sprintName + " Capacity Status - " + name + ", you are overallocated",
 				"<h1>"+name + ", you are overallocated</h1>" + "<p>Hi "
 						+ name

@@ -20,6 +20,7 @@ package odin.domain;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.GeneratedValue;
@@ -109,6 +110,28 @@ public class Individual {
 	private String timeZone;
 
 	private String emailAddress;
+	
+	@Column(name="MGR_USR")
+	private String managerUserID;
+	
+	public String getManagerUserID() {
+		return managerUserID;
+	}
+
+	public void setManagerUserID(String managerUserID) {
+		this.managerUserID = managerUserID;
+	}
+
+	public String getManagerEmailAddress() {
+		return managerEmailAddress;
+	}
+
+	public void setManagerEmailAddress(String managerEmailAddress) {
+		this.managerEmailAddress = managerEmailAddress;
+	}
+
+	@Column(name="MGR_EMAIL")
+	private String managerEmailAddress;
 
 	@Temporal(TemporalType.DATE)
 	private Date contacted;
