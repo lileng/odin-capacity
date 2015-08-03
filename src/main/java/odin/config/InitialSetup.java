@@ -44,6 +44,7 @@ public class InitialSetup {
 	protected static Logger log = Logger.getLogger("Configuration");
 
 	public static void main(String[] args) throws Exception {
+		//setupWeeks();
 		setupSprint();
 
 	}
@@ -58,8 +59,8 @@ public class InitialSetup {
 		Calendar calEnd;
 		Date startDate;
 		Date finishDate;
-		String startDateS = "01/01/2014";
-		String finishDateS = "31/12/2014";
+		String startDateS = "01/01/2015";
+		String finishDateS = "31/12/2015";
 
 		sdf = new SimpleDateFormat("dd/MM/yyyy");
 
@@ -126,23 +127,23 @@ public class InitialSetup {
 		// Getting Week object
 		TypedQuery<Week> q = em.createQuery(
 				"select w from Week w WHERE w.name=:name", Week.class);
-		q.setParameter("name", "2014_9");
+		q.setParameter("name", "2015_53");
 		Week week = q.getSingleResult();
 		log.info(week.toString());
 
 		TypedQuery<Sprint> qs = em.createQuery(
 				"select s from Sprint s WHERE s.sprintName=:sname",
 				Sprint.class);
-		qs.setParameter("sname", "Sprint 2014.02");
+		qs.setParameter("sname", "Sprint 2015.12");
 		Sprint sprint = null;
 		try {
 			sprint = qs.getSingleResult();
 		} catch (NoResultException nre) {
 			log.warning("Did not find any sprint. Creating a new one...");
 			sprint = new Sprint();
-			sprint.setSprintName("Sprint 2014.02");
-			sprint.setStartDate(sdf.parse("01/02/2014"));
-			sprint.setEndDate(sdf.parse("28/02/2014"));
+			sprint.setSprintName("Sprint 2015.12");
+			sprint.setStartDate(sdf.parse("01/12/2015"));
+			sprint.setEndDate(sdf.parse("31/12/2015"));
 
 			List<Week> weeks = new ArrayList<Week>();
 			weeks.add(week);

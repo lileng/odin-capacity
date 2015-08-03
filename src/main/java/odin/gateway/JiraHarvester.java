@@ -36,20 +36,17 @@ import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.api.domain.Version;
 import com.atlassian.util.concurrent.Promise;
 
-
 /**
  * The harvester is responsible for collecting JIRA tasks from a given project.
  * 
  */
 public class JiraHarvester {
-	//private static final String String = null;
 
 	protected static Logger logger = Logger.getLogger(JiraHarvester.class);
 
-	//private static String url, usr, pw;
-
 	public static int collectHoursRemainingWork(String project, String sprint,
-			String assignee) throws IOException, InterruptedException, ExecutionException {
+			String assignee) throws IOException, InterruptedException,
+			ExecutionException {
 		int minutesRemainingWork = 0;
 		int hoursRemainingWork = 0;
 		Set<Hashtable<String, String>> collectedData = collect(project, sprint,
@@ -66,12 +63,13 @@ public class JiraHarvester {
 		if (minutesRemainingWork > 0) {
 			hoursRemainingWork = minutesRemainingWork / 60;
 			logger.info("hoursRemainingWork=" + hoursRemainingWork);
-		} 
+		}
 		return hoursRemainingWork;
 	}
 
 	public static Hashtable<String, String> getTasksWithRemainingWork(
-			String project, String sprint, String assignee) throws IOException, InterruptedException, ExecutionException {
+			String project, String sprint, String assignee) throws IOException,
+			InterruptedException, ExecutionException {
 		Hashtable<String, String> kv = new Hashtable<String, String>();
 		Set<Hashtable<String, String>> collectedData = collect(project, sprint,
 				assignee);
@@ -87,13 +85,15 @@ public class JiraHarvester {
 		return kv;
 	}
 
+
 	public static Set<Hashtable<String, String>> collect(String project,
-			String sprint, String assignee) throws IOException, InterruptedException, ExecutionException {
+			String sprint, String assignee) throws IOException,
+			InterruptedException, ExecutionException {
 
 		logger.info("Get projects in Jira");
 		// First get all projects that the user knows about in JIRA
-		Iterable<BasicProject> projects = JIRAGateway.getRestClient().getProjectClient()
-				.getAllProjects().claim();
+		Iterable<BasicProject> projects = JIRAGateway.getRestClient()
+				.getProjectClient().getAllProjects().claim();
 		for (BasicProject bp : projects) {
 			logger.info("Project name=" + bp.getName());
 		}
@@ -105,22 +105,22 @@ public class JiraHarvester {
 		String jql = "fixVersion = \"" + sprint + "\" AND  assignee = "
 				+ assignee + " ORDER BY key ASC";
 		int maxResults = 1000;
-		int startAt = 1;
+		int startAt = 0;
 		logger.info("Executing JQL = " + jql);
 		logger.info("maxResults=" + maxResults + ", startAt=" + startAt);
-		searchResultPromise = JIRAGateway.getRestClient().getSearchClient().searchJql(jql,
-				maxResults, startAt, null);
+		searchResultPromise = JIRAGateway.getRestClient().getSearchClient()
+				.searchJql(jql, maxResults, startAt, null);
 
 		SearchResult searchResult = searchResultPromise.get();
-		
-		if(searchResult != null) {
+
+		if (searchResult != null) {
 			Iterable<? extends Issue> issues = searchResult.getIssues();
 			Set<Hashtable<String, String>> issuesForUser = getIssuesForUser(issues);
 			JIRAGateway.closeRestClient();
 			return issuesForUser;
-		} else return null;
-		
-		
+		} else
+			return null;
+
 	}
 
 	private static Set getIssuesForUser(Iterable<? extends Issue> issues) {
@@ -133,7 +133,8 @@ public class JiraHarvester {
 			Hashtable<String, String> kv = new Hashtable<String, String>();
 			kv.put("key", bi.getKey());
 			String key = bi.getKey();
-			Issue issue = JIRAGateway.getRestClient().getIssueClient().getIssue(key).claim();
+			Issue issue = JIRAGateway.getRestClient().getIssueClient()
+					.getIssue(key).claim();
 			BasicUser bu = issue.getAssignee();
 			kv.put("summary", issue.getSummary());
 			if (bu != null) {

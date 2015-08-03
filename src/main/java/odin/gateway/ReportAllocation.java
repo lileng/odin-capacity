@@ -22,28 +22,26 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.text.ParseException;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.UriInfo;
-
 import odin.config.Configuration;
+import odin.demand.ManageBacklog;
 import odin.domain.Individual;
 import odin.domain.Observation;
 import odin.domain.Sprint;
 import odin.util.OdinResponse;
+import odin.util.ReadGoogleSpreadsheet;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
+
+import com.google.gdata.util.AuthenticationException;
+import com.google.gdata.util.ServiceException;
 
 /**
  * <ol>
@@ -59,18 +57,7 @@ import org.apache.log4j.Logger;
  */
 public class ReportAllocation {
 	protected static Logger logger = Logger.getLogger(ReportAllocation.class);
-	// The @Context annotation allows us to have certain contextual objects
-	// injected into this class.
-	// UriInfo object allows us to get URI information (no kidding).
-	@Context
-	UriInfo uriInfo;
 
-	// Another "injected" object. This allows us to use the information that's
-	// part of any incoming request.
-	// We could, for example, get header information, or the requestor's
-	// address.
-	@Context
-	Request request;
 	static String[] notificationList = Configuration.getDefaultValue(
 			"odin.notify.prod.to").split(" ");
 
@@ -98,12 +85,6 @@ public class ReportAllocation {
 		}
 	}
 
-	@GET
-	@Path("ping")
-	@Produces(value = "application/json")
-	public String ping() {
-		return "{'ping': 'pong'}";
-	}
 
 	private static void process(OdinResponse res)  {
 		logger.info("process");
@@ -143,7 +124,6 @@ public class ReportAllocation {
 		int hoursRemainingCapacity = Sprint.getRemainingAvailability(sprint,
 				username);
 		int minutesRemainingWork = 0;
-		;
 		int hoursRemainingWork = 0;
 		StringBuffer sb = new StringBuffer();
 

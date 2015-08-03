@@ -76,10 +76,8 @@ public class Availability {
 		cal.setTime(endDate);
 
 		cal.set(Calendar.DAY_OF_WEEK, Calendar.SATURDAY);
-
+		log.info("Availability for userName=" + userName + ", endDateS="+ endDateS + ", hours=" + hours);
 		setAvailability(cal, userName, hours);
-		log.info("Availability for [" + userName + "] is: "
-				+ getAvailability(cal, userName));
 	}
 
 	public Individual getIndividual() {

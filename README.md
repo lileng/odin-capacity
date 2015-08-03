@@ -1,34 +1,33 @@
-<<<<<<< HEAD
-The OpenShift `jbossews` cartridge documentation can be found at:
-
-http://openshift.github.io/documentation/oo_cartridge_guide.html#tomcat
-=======
-NAME
+# NAME
     Odin Capacity
 
-SYNOPSIS
+# SYNOPSIS
     TBD
 
-DESCRIPTION
-    Utility to report remaining capacity vs. remaining hours for individuals
+# DESCRIPTION
+    Utility to report remaining capacity vs. remaining hours for individuals.
+    * The capacity tool feeds on a capacity grid entered into a Google Spreadsheet. Each individual typically updates a weekly capacity in hours at the start of every sprint.
+    * The sprint configuration is done in a local MySQL database
+    * Remaining hours on JIRA tickets are added up based on queries to JIRA.
+    * If calculated capacity is either higher or lower than remaining hours, an email is sent to the individual.
     
-STATUS
+# STATUS
 
- EXAMPLES
-    To read capacity in an existing spreadsheet, execute the following: ReadGoogleSpreadsheet Sprint 2015.07
-    Note that the spreadsheet needs to follow strictly a certain convention. If not, the read will not work.
+#  EXAMPLES
+ Run the end to end process
+```java -jar /home/usr_home/agile/capacity.jar```
  
- DEPLOYMENT
-    TBD
+Manual update of current capacity
+ ```java ReadGoogleSpreadsheet Sprint 2014.11```
 
- SEE ALSO
+# DEPLOYMENT
+    Using Maven to build standard jar file
+
+# SEE ALSO
     n/a
     
-BUGS
-    n/a
+# BUGS
+    See https://github.com/lileng/odin-capacity/issues
 
-AUTHORS / CONTRIBUTORS
-    Morten Lileng
- 
- 
->>>>>>> b790155901da0246069c1a766e8216e05a117eaf
+# AUTHORS / CONTRIBUTORS
+    [Morten Lileng](mailto:odin@lileng.com)
