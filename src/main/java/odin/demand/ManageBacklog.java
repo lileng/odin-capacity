@@ -67,7 +67,10 @@ public class ManageBacklog {
 			try {
 				SendMail.sendBacklogManagementMessage(notificationList, null,
 						"The Job ManageBacklog Completed Abnormally",
-						e.getMessage());
+						"The following exception occured while attempting to "
+						+ "updateSubtaskRanking or zeroRemainingHoursForDoneTasks using "
+						+ "JIRA URL " + Configuration.getDefaultValue("gateway.jira.url") + "  :  "
+						+ e.getMessage());
 			} catch (IOException ee) {
 				e.printStackTrace();
 				log.error("Unable to send email notification", ee);
