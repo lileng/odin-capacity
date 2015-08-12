@@ -70,7 +70,7 @@ public class SendMail {
 		SendGrid.Email email = new SendGrid.Email();
 		email.addTo(toEmailAddress);
 		email.addCc(ccEmailAddress);
-		email.setFrom("odin@lileng.com");
+		email.setFrom(Configuration.getDefaultValue("odin.notify.prod.from"));
 		email.setSubject(subject);
 		email.setHtml(content);
 		email.setTemplateId(Configuration.getDefaultValue("sendgrid.capacity.template_id"));
@@ -89,7 +89,7 @@ public class SendMail {
 		email.addTo(notificationList);
 		if(ccEmailAddress != null)
 			email.addCc(ccEmailAddress);
-		email.setFrom("odin@lileng.com");
+		email.setFrom(Configuration.getDefaultValue("odin.notify.prod.from"));
 		email.setSubject(subject);
 		email.setHtml(content);
 		email.setTemplateId(Configuration.getDefaultValue("sendgrid.backlog_mgmt.template_id"));
