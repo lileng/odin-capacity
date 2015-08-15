@@ -29,6 +29,8 @@ import java.util.List;
 
 import odin.config.Configuration;
 import odin.domain.Availability;
+import odin.domain.Individual;
+import odin.domain.Sprint;
 import odin.gateway.SendMail;
 
 import org.apache.commons.lang.StringUtils;
@@ -49,8 +51,17 @@ public class ReadGoogleSpreadsheet {
 			"odin.notify.prod.to").split(" ");
 
 	public static void main(String[] args) throws Exception {
+		List<Sprint> activeSprints = Sprint.getActiveSprints();
 
-		logger.info("Getting worksheet from input parameter: " + StringUtils.join(args, ' '));
+		for (Sprint sprint : activeSprints) {
+			process(sprint.getSprintName());
+		}
+	}
+
+	private static void process(String sprintName) throws MalformedURLException,
+			IOException, ServiceException, GeneralSecurityException,
+			ParseException, Exception {
+		logger.info("Getting worksheet (same name as sprint): " + sprintName);
 
 		StringBuffer returnBody = new StringBuffer();
 		returnBody.append("<p>"+ReadGoogleSpreadsheet.class.getName() + " Completed");
@@ -62,7 +73,7 @@ public class ReadGoogleSpreadsheet {
 				.getSpreadsheetService().getFeed(SPREADSHEET_FEED_URL,
 						ListFeed.class);
 
-		WorksheetEntry worksheet = getWorkSheet(StringUtils.join(args, ' '));
+		WorksheetEntry worksheet = getWorkSheet(sprintName);
 		logger.info("Worksheet title: " + worksheet.getTitle().getPlainText());
 		returnBody.append("<ul><li>Worksheet title: " + worksheet.getTitle().getPlainText() + "</li></ul>");
 
