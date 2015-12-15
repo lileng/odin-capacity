@@ -70,7 +70,7 @@ public class ReportAllocation {
 		sendJobMessage(res);
 		logger.info("Stopping ReportAllocation");
 	}
-	
+
 	private static void sendJobMessage(OdinResponse res) throws Exception {
 		String header = "The Job ReportAllocation Completed Normally";
 		if (res.getStatusCode() != 0) {
@@ -85,8 +85,7 @@ public class ReportAllocation {
 		}
 	}
 
-
-	private static void process(OdinResponse res)  {
+	private static void process(OdinResponse res) {
 		logger.info("process");
 		StringBuffer msg = new StringBuffer();
 		msg.append("<p>ReportAllocation Completed.");
@@ -97,19 +96,30 @@ public class ReportAllocation {
 			activeIndividuals = Sprint
 					.getActiveParticipantsNotContactedToday(sprint
 							.getSprintName());
-			msg.append(" Processed the following individuals for sprint: " + sprint.getSprintName() + "<ul>");
+			msg.append(" Processed the following individuals for sprint: "
+					+ sprint.getSprintName() + "<ul>");
 			for (Individual i : activeIndividuals) {
 				try {
 					processIndividual(i.getUserID(), sprint.getSprintName(),
-							i.getEmailAddress(), i.getFirstName(), i.getManagerEmailAddress());
+							i.getEmailAddress(), i.getFirstName(),
+							i.getManagerEmailAddress(), false);
 				} catch (Exception e) {
-					msg.append("<li>GOT ERROR WHEN ATTEMPTING TO PROCESS THE FOLLOWING RECORD: " + i.getFirstName() + " " + i.getLastName() + ", user=" + i.getUserID()+ ", email=" + i.getEmailAddress());
+					msg.append("<li>GOT ERROR WHEN ATTEMPTING TO PROCESS THE FOLLOWING RECORD: "
+							+ i.getFirstName()
+							+ " "
+							+ i.getLastName()
+							+ ", user="
+							+ i.getUserID()
+							+ ", email="
+							+ i.getEmailAddress());
 					msg.append("<br>----->   " + e.getStackTrace() + "</li>");
 					res.setStatusCode(-1);
 					res.setReasonPhrase(e.getMessage());
 					logger.error("failed", e);
 				}
-				msg.append("<li>" + i.getFirstName() + " " + i.getLastName() + ", user=" + i.getUserID()+ ", email=" + i.getEmailAddress()+"</li>");
+				msg.append("<li>" + i.getFirstName() + " " + i.getLastName()
+						+ ", user=" + i.getUserID() + ", email="
+						+ i.getEmailAddress() + "</li>");
 			}
 			msg.append("</ul>");
 		}
@@ -120,7 +130,8 @@ public class ReportAllocation {
 	}
 
 	public static void processIndividual(String username, String sprint,
-			String emailAddress, String name, String mgrEmail) throws Exception {
+			String emailAddress, String name, String mgrEmail, boolean test)
+			throws Exception {
 		int hoursRemainingCapacity = Sprint.getRemainingAvailability(sprint,
 				username);
 		int minutesRemainingWork = 0;
@@ -162,7 +173,7 @@ public class ReportAllocation {
 			// Send mail
 			logger.info("Overallocation: HoursRemainingCapacity < hoursRemainingWork for "
 					+ username + ". Sending email to notify...");
-			if (true) {
+			if (!test) {
 				Observation.recordObservation(username, "Overallocation",
 						"Overallocation: HoursRemainingCapacity < hoursRemainingWork for "
 								+ username, "hoursRemainingCapacity",
@@ -170,23 +181,29 @@ public class ReportAllocation {
 						hoursRemainingWork);
 
 				sendOverallocatedMail(sprint, emailAddress, name,
-						hoursRemainingCapacity, hoursRemainingWork, sb, mgrEmail);
+						hoursRemainingCapacity, hoursRemainingWork, sb,
+						mgrEmail);
 				Individual.recordUserContactedNow(username);
+			} else {
+				logger.warn("*********    In testing mode   *************");
 			}
 
 		} else if (delta > Integer.parseInt(underAllocationThreshold)) {
 			// Send mail
 			logger.info("Underallocation: HoursRemainingCapacity > hoursRemainingWork for "
 					+ username + ". Sending email to notify...");
-			if (true) {
+			if (!test) {
 				Observation.recordObservation(username, "Underallocation",
 						"Underallocation: HoursRemainingCapacity > hoursRemainingWork for "
 								+ username, "hoursRemainingCapacity",
 						hoursRemainingCapacity, "hoursRemainingWork",
 						hoursRemainingWork);
 				sendUnderallocatedMail(sprint, emailAddress, name,
-						hoursRemainingCapacity, hoursRemainingWork, sb, mgrEmail);
+						hoursRemainingCapacity, hoursRemainingWork, sb,
+						mgrEmail);
 				Individual.recordUserContactedNow(username);
+			} else {
+				logger.warn("*********    In testing mode   *************");
 			}
 
 		} else {
@@ -197,10 +214,11 @@ public class ReportAllocation {
 		}
 	}
 
-	private static void sendUnderallocatedMail(String sprintName, String emailAddress,
-			String name, int hoursRemainingCapacity, int hoursRemainingWork,
-			StringBuffer sb, String mgrEmail) throws Exception {
-		
+	private static void sendUnderallocatedMail(String sprintName,
+			String emailAddress, String name, int hoursRemainingCapacity,
+			int hoursRemainingWork, StringBuffer sb, String mgrEmail)
+			throws Exception {
+
 		String[] cc = Configuration.getDefaultValue("gateway.sendmail.cc")
 				.split(" ");
 		ArrayList<String> ar = new ArrayList(Arrays.asList(cc));
@@ -208,10 +226,14 @@ public class ReportAllocation {
 		SendMail.sendCapacityMessage(
 				emailAddress,
 				ar.toArray(new String[ar.size()]),
-				sprintName + " Capacity Status - " + name + ", you are underallocated",
-				"<h1>"+name + ", you are underallocated</h1>" + "<p>Hi "
+				sprintName + " Capacity Status - " + name
+						+ ", you are underallocated",
+				"<h1>"
 						+ name
-						+ ". It looks like you may have hours available, and not enough tasks on your plate for " 
+						+ ", you are underallocated</h1>"
+						+ "<p>Hi "
+						+ name
+						+ ". It looks like you may have hours available, and not enough tasks on your plate for "
 						+ sprintName
 						+ ". <ul>"
 						+ "<li>Your estimated remaining capacity in hours: "
@@ -231,8 +253,9 @@ public class ReportAllocation {
 						+ "<ul>" + sb.toString() + "</ul>");
 	}
 
-	private static void sendOverallocatedMail(String sprintName, String emailAddress, String name,
-			int hoursRemainingCapacity, int hoursRemainingWork, StringBuffer sb, String mgrEmail)
+	private static void sendOverallocatedMail(String sprintName,
+			String emailAddress, String name, int hoursRemainingCapacity,
+			int hoursRemainingWork, StringBuffer sb, String mgrEmail)
 			throws Exception {
 		String[] cc = Configuration.getDefaultValue("gateway.sendmail.cc")
 				.split(" ");
@@ -241,8 +264,12 @@ public class ReportAllocation {
 		SendMail.sendCapacityMessage(
 				emailAddress,
 				ar.toArray(new String[ar.size()]),
-				sprintName + " Capacity Status - " + name + ", you are overallocated",
-				"<h1>"+name + ", you are overallocated</h1>" + "<p>Hi "
+				sprintName + " Capacity Status - " + name
+						+ ", you are overallocated",
+				"<h1>"
+						+ name
+						+ ", you are overallocated</h1>"
+						+ "<p>Hi "
 						+ name
 						+ ". It looks like you may have more tasks than available hours left for "
 						+ sprintName
