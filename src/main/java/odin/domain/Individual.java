@@ -111,6 +111,8 @@ public class Individual {
 
 	private String emailAddress;
 	
+	private Boolean isActive;
+	
 	@Column(name="MGR_USR")
 	private String managerUserID;
 	
@@ -162,5 +164,13 @@ public class Individual {
 	public String toString() {
 		return "Individual [firstName=" + firstName + ", lastName=" + lastName
 				+ "]";
+	}
+
+	public boolean isActive() {
+		return isActive;
+	}
+
+	public void setActive(boolean isActive) {
+		this.isActive = isActive;
 	}
 }

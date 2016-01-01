@@ -32,6 +32,7 @@ import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
@@ -54,7 +55,6 @@ public class Availability {
 
 	final static long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
 
-
 	protected static Logger log = Logger.getLogger("Availability");
 
 	public static void main(String[] args) throws Exception {
@@ -64,11 +64,10 @@ public class Availability {
 		String userName = "wsmytherin";
 		int hours = 28;
 		setAvailability(endDateS, userName, hours);
-		
+
 	}
 
-	public static void setAvailability(String endDateS, String userName,
-			int hours) throws ParseException {
+	public static void setAvailability(String endDateS, String userName, int hours) throws ParseException {
 		SimpleDateFormat sdf = new SimpleDateFormat("M/d/yy");
 		Date endDate = sdf.parse(endDateS);
 
@@ -76,7 +75,7 @@ public class Availability {
 		cal.setTime(endDate);
 
 		cal.set(Calendar.DAY_OF_WEEK, Calendar.SATURDAY);
-		log.info("Availability for userName=" + userName + ", endDateS="+ endDateS + ", hours=" + hours);
+		log.info("Availability for userName=" + userName + ", endDateS=" + endDateS + ", hours=" + hours);
 		setAvailability(cal, userName, hours);
 	}
 
@@ -106,34 +105,27 @@ public class Availability {
 
 	@Override
 	public String toString() {
-		return "Availability [individual=" + individual + ", week=" + week
-				+ ", hours=" + hours + "]";
+		return "Availability [individual=" + individual + ", week=" + week + ", hours=" + hours + "]";
 	}
 
-	private static void setAvailability(Calendar weekEnding, String userId,
-			int hours) {
+	private static void setAvailability(Calendar weekEnding, String userId, int hours) {
 		EntityManager em = DBUtil.getEntityManager();
 
 		// Getting Week object
 
-		TypedQuery<Week> q = em.createQuery(
-				"select w from Week w WHERE w.endDate=:arg1", Week.class);
+		TypedQuery<Week> q = em.createQuery("select w from Week w WHERE w.endDate=:arg1", Week.class);
 		q.setParameter("arg1", weekEnding.getTime());
 		Week week = q.getSingleResult();
 		log.info(week.toString());
 
 		// Getting Individual
-		TypedQuery<Individual> q2 = em.createQuery(
-				"select i from Individual i WHERE i.userID=:uid",
-				Individual.class);
+		TypedQuery<Individual> q2 = em.createQuery("select i from Individual i WHERE i.userID=:uid", Individual.class);
 		q2.setParameter("uid", userId);
 		Individual individual = q2.getSingleResult();
 		log.info(individual.toString());
 
-		TypedQuery<Availability> q3 = em
-				.createQuery(
-						"select a from Availability a WHERE a.individual=:individual AND a.week=:week",
-						Availability.class);
+		TypedQuery<Availability> q3 = em.createQuery(
+				"select a from Availability a WHERE a.individual=:individual AND a.week=:week", Availability.class);
 		q3.setParameter("individual", individual);
 		q3.setParameter("week", week);
 		Availability availability = null;
@@ -164,7 +156,7 @@ public class Availability {
 		em.close();
 
 	}
-	
+
 	public static int getAvailability(String endDateS, String userId) {
 		SimpleDateFormat sdf = new SimpleDateFormat("M/d/yy");
 		Date endDate = null;
@@ -186,38 +178,45 @@ public class Availability {
 		EntityManager em = DBUtil.getEntityManager();
 
 		// Getting Week object
-		TypedQuery<Week> q = em.createQuery(
-				"select w from Week w WHERE w.endDate=:arg1", Week.class);
+		TypedQuery<Week> q = em.createQuery("select w from Week w WHERE w.endDate=:arg1", Week.class);
 		q.setParameter("arg1", weekEnding.getTime());
-		Week week = q.getSingleResult();
+		Week week = null;
+		try {
+			week = q.getSingleResult();
+		} catch (NoResultException nre) {
+			log.severe("The following week not found in DB: " + weekEnding.getTime().toString());
+			return 0;
+		} catch (NonUniqueResultException nue) {
+			log.severe("More than one week was returned from DB for the following week: " 
+					+ weekEnding.getTime().toString() );
+		}
 		log.info(week.toString());
 
 		// Getting Individual
-		TypedQuery<Individual> q2 = em.createQuery(
-				"select i from Individual i WHERE i.userID=:uid",
-				Individual.class);
+		TypedQuery<Individual> q2 = em.createQuery("select i from Individual i WHERE i.userID=:uid", Individual.class);
 		q2.setParameter("uid", userId);
 		Individual individual = null;
 		try {
 			individual = q2.getSingleResult();
 			log.info(individual.toString());
+			if(individual.isActive() == false){
+				log.warning("The requested individual is marked as 'inactive': " + userId);
+				return 0;
+			}
 		} catch (NoResultException nre) {
 			log.warning("No individual found with userId: " + userId);
 			return 0;
 		}
 		if (individual != null) {
-			TypedQuery<Availability> q3 = em
-					.createQuery(
-							"select a from Availability a WHERE a.individual=:individual AND a.week=:week",
-							Availability.class);
+			TypedQuery<Availability> q3 = em.createQuery(
+					"select a from Availability a WHERE a.individual=:individual AND a.week=:week", Availability.class);
 			q3.setParameter("individual", individual);
 			q3.setParameter("week", week);
 			Availability availability = null;
 			try {
 				availability = q3.getSingleResult();
 			} catch (NoResultException nre) {
-				log.warning("No availability found with userId: "
-						+ individual.toString() + ", and week: "
+				log.warning("No availability found with userId: " + individual.toString() + ", and week: "
 						+ week.toString());
 				return 0;
 			}

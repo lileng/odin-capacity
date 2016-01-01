@@ -44,7 +44,7 @@ public class InitialSetup {
 	protected static Logger log = Logger.getLogger("Configuration");
 
 	public static void main(String[] args) throws Exception {
-		//setupWeeks();
+		// setupWeeks();  // Used for setting up new weeks at the beginning of the year.
 		setupSprint();
 
 	}
@@ -59,8 +59,8 @@ public class InitialSetup {
 		Calendar calEnd;
 		Date startDate;
 		Date finishDate;
-		String startDateS = "01/01/2015";
-		String finishDateS = "31/12/2015";
+		String startDateS = "01/01/2016";
+		String finishDateS = "31/12/2016";
 
 		sdf = new SimpleDateFormat("dd/MM/yyyy");
 
@@ -134,16 +134,16 @@ public class InitialSetup {
 		TypedQuery<Sprint> qs = em.createQuery(
 				"select s from Sprint s WHERE s.sprintName=:sname",
 				Sprint.class);
-		qs.setParameter("sname", "Sprint 2015.12");
+		qs.setParameter("sname", "Sprint 2016.01");
 		Sprint sprint = null;
 		try {
 			sprint = qs.getSingleResult();
 		} catch (NoResultException nre) {
 			log.warning("Did not find any sprint. Creating a new one...");
 			sprint = new Sprint();
-			sprint.setSprintName("Sprint 2015.12");
-			sprint.setStartDate(sdf.parse("01/12/2015"));
-			sprint.setEndDate(sdf.parse("31/12/2015"));
+			sprint.setSprintName("Sprint 2016.01");
+			sprint.setStartDate(sdf.parse("01/04/2016"));
+			sprint.setEndDate(sdf.parse("31/01/2016"));
 
 			List<Week> weeks = new ArrayList<Week>();
 			weeks.add(week);
@@ -157,6 +157,7 @@ public class InitialSetup {
 		em.getTransaction().commit();
 
 		em.close();
+		log.info("Completed sprint setup.");
 	}
 
 }
