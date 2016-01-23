@@ -6,6 +6,7 @@
 	<packaging>jar</packaging>
 	<version>1.0</version>
 	<name>odin-capacity</name>
+
 	<repositories>
 
 		<repository>
@@ -143,13 +144,11 @@
 			<version>4.5</version>
 		</dependency>
 
-
 		<dependency>
 			<groupId>com.sendgrid</groupId>
 			<artifactId>sendgrid-java</artifactId>
 			<version>2.2.2</version>
 		</dependency>
-
 
 	</dependencies>
 
@@ -166,7 +165,7 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>odin.gateway.CapacityDriver</mainClass>
+							<mainClass>odin.capacity.Main</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
@@ -180,6 +179,23 @@
 					<overWriteReleases>false</overWriteReleases> <overWriteSnapshots>false</overWriteSnapshots> 
 					<overWriteIfNewer>true</overWriteIfNewer> </configuration> </execution> </executions> -->
 			</plugin>
+
+			<plugin>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.10</version>
+				<executions>
+					<execution>
+						<phase>install</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 	</build>
 </project>

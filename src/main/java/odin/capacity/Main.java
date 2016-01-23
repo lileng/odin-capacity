@@ -16,6 +16,10 @@ public class Main {
 			.getLogger(Main.class);
 
 	public static void main(String[] args) {
+		if(args.length == 0){
+			LOG.error("Need correct argument to start application");
+			System.exit(-1);
+		}
 		if(args[0].equals("ReadGoogleSpreadsheet")){
 			LOG.info("Starting ReadGoogleSpreadsheet");
 			try {
